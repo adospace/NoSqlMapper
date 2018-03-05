@@ -8,7 +8,9 @@ namespace NoSqlMapper
 {
     public interface ISqlDatabaseProvider
     {
-        [ItemNotNull]
-        Task<NoSqlDatabase> GetDatabaseAsync([NotNull] string databaseName);
+        [NotNull]
+        Task EnsureDatabaseAsync([NotNull] string databaseName);
+
+        
     }
 }
