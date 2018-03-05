@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NoSqlMapper
 {
     public class NoSqlConnection
     {
+
         public NoSqlConnection()
         {
         }
@@ -38,12 +40,13 @@ namespace NoSqlMapper
 
         public ILoggerProvider LoggerProvider { get; set; }
 
+        
 
-        public NoSqlDatabase GetDatabase(string databaseName)
+        public async Task<NoSqlDatabase> GetDatabaseAsync(string databaseName)
         {
             Validate.NotNullOrEmptyOrWhiteSpace(databaseName, nameof(databaseName));
 
-            return new NoSqlDatabase(this);
+            return new NoSqlDatabase(this, databaseName);
         }
 
     }
