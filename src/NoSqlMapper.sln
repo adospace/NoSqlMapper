@@ -5,13 +5,11 @@ VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoSqlMapper", "NoSqlMapper\NoSqlMapper.csproj", "{CE0B6519-D8BE-46AA-9912-12078BA99A6E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoSqlMapper.SqlServer", "NoSqlMapper.SqlServer\NoSqlMapper.SqlServer.csproj", "{8A35BE12-5334-4896-BDE2-D44A77168E22}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoSqlMapper.SqlServer", "NoSqlMapper.SqlServer\NoSqlMapper.SqlServer.csproj", "{8A35BE12-5334-4896-BDE2-D44A77168E22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoSqlMapper.JsonNET", "NoSqlMapper.JsonNET\NoSqlMapper.JsonNET.csproj", "{AC5551C7-D347-4700-9294-B32F03651E91}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoSqlMapper.JsonNET", "NoSqlMapper.JsonNET\NoSqlMapper.JsonNET.csproj", "{AC5551C7-D347-4700-9294-B32F03651E91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoSqlMapper.Serilog", "NoSqlMapper.Serilog\NoSqlMapper.Serilog.csproj", "{6A685933-F0D1-442F-8546-6C4833F95D4A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoSqlMapper.Test", "NoSqlMapper.Test\NoSqlMapper.Test.csproj", "{BCBD0805-C021-481B-97A4-01B55964AD38}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoSqlMapper.Test", "NoSqlMapper.Test\NoSqlMapper.Test.csproj", "{BCBD0805-C021-481B-97A4-01B55964AD38}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,10 +29,6 @@ Global
 		{AC5551C7-D347-4700-9294-B32F03651E91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC5551C7-D347-4700-9294-B32F03651E91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC5551C7-D347-4700-9294-B32F03651E91}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6A685933-F0D1-442F-8546-6C4833F95D4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6A685933-F0D1-442F-8546-6C4833F95D4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6A685933-F0D1-442F-8546-6C4833F95D4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6A685933-F0D1-442F-8546-6C4833F95D4A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BCBD0805-C021-481B-97A4-01B55964AD38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BCBD0805-C021-481B-97A4-01B55964AD38}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCBD0805-C021-481B-97A4-01B55964AD38}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -4,8 +4,8 @@ using System.Text;
 
 namespace NoSqlMapper
 {
-    public interface ILoggerProvider
+    public interface ILogProvider
     {
-
+        void Log(string message);
     }
 }

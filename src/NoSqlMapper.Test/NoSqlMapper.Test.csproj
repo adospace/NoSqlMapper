@@ -7,9 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\NoSqlMapper\Validate.cs" Link="Validate.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="11.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NoSqlMapper.JsonNET\NoSqlMapper.JsonNET.csproj" />
+    <ProjectReference Include="..\NoSqlMapper.SqlServer\NoSqlMapper.SqlServer.csproj" />
+    <ProjectReference Include="..\NoSqlMapper\NoSqlMapper.csproj" />
   </ItemGroup>
 
 </Project>
