@@ -41,16 +41,19 @@ namespace NoSqlMapper
         #region Read
 
         [ItemNotNull]
-        Task<IEnumerable<T>> QueryAsync<T>([NotNull] string databaseName, [NotNull] string tableName, [NotNull] Query.Query query,
+        Task<IEnumerable<NsDocument>> QueryAsync([NotNull] string databaseName, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query,
             SortDescription[] sorts = null, int skip = 0, int take = 0);
 
         [ItemCanBeNull]
-        Task<T> QueryFirstAsync<T>([NotNull] string databaseName, [NotNull] string tableName, 
+        Task<NsDocument> QueryFirstAsync([NotNull] string databaseName, [NotNull] string tableName, TypeReflector typeReflector, 
             [NotNull] Query.Query query,
             SortDescription[] sorts = null);
 
+        [ItemCanBeNull]
+        Task<NsDocument> FindAsync([NotNull] string databaseName, [NotNull] string tableName, [NotNull] object id);
+
         [NotNull]
-        Task<int> CountAsync([NotNull] string databaseName, [NotNull] string tableName, [NotNull] Query.Query query);
+        Task<int> CountAsync([NotNull] string databaseName, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query);
         #endregion
 
         #region Create & Update & Delete

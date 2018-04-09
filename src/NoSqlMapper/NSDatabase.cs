@@ -25,11 +25,11 @@ namespace NoSqlMapper
             return collection;
         }
 
-        public void DeleteCollectionAsync(string collectionName)
+        public async Task DeleteCollectionAsync(string collectionName)
         {
             Validate.NotNullOrEmptyOrWhiteSpace(collectionName, nameof(collectionName));
 
-            Connection.SqlDatabaseProvider.DeleteTableAsync(Name, collectionName);
+            await Connection.SqlDatabaseProvider.DeleteTableAsync(Name, collectionName);
         }
 
     }

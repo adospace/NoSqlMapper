@@ -26,5 +26,15 @@ namespace NoSqlMapper.Query
         {
             return new QueryBinary(left, right, LogicalOperator.Or);
         }
+
+        public static Query Contains([NotNull] string field, [NotNull] object value)
+        {
+            return new QueryUnary(field, UnaryOperator.Contains, value);
+        }
+
+        public static Query NotContains([NotNull] string field, [NotNull] object value)
+        {
+            return new QueryUnary(field, UnaryOperator.NotContains, value);
+        }
     }
 }

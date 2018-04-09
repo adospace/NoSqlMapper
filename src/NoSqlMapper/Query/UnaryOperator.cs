@@ -13,5 +13,9 @@
         LessThan,
 
         LessOrEqualTo,
+
+        Contains,
+
+        NotContains,
     }
 }

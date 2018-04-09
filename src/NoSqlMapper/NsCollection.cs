@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using NoSqlMapper.Query;
 
 namespace NoSqlMapper
 {
@@ -21,31 +22,28 @@ namespace NoSqlMapper
 
         private string _idPropertyName;
         private ObjectIdType _typeOfObjectId;
-        private Dictionary<string, PropertyInfo> _documentProperties;
+        private TypeReflector _typeReflector;
 
         private void ReflectModelType()
         {
-            _documentProperties = typeof(T)
-                .GetProperties()
-                .Where(pi => pi.CanRead && pi.CanWrite)
-                .ToDictionary(_ => _.Name, _ => _);
+            _typeReflector = TypeReflector.Create<T>();
 
-            var idKey = _documentProperties.FirstOrDefault(_ => StringComparer.OrdinalIgnoreCase.Compare(_.Key, "id") == 0);
+            var idKey = _typeReflector.Properties.FirstOrDefault(_ => StringComparer.OrdinalIgnoreCase.Compare(_.Key, "id") == 0);
             if (idKey.Key == null)
-                idKey = _documentProperties.FirstOrDefault(_ => StringComparer.OrdinalIgnoreCase.Compare(_.Key, "uniqueid") == 0);
+                idKey = _typeReflector.Properties.FirstOrDefault(_ => StringComparer.OrdinalIgnoreCase.Compare(_.Key, "uniqueid") == 0);
             if (idKey.Key == null)
-                idKey = _documentProperties.FirstOrDefault(_ => StringComparer.OrdinalIgnoreCase.Compare(_.Key, "objectid") == 0);
+                idKey = _typeReflector.Properties.FirstOrDefault(_ => StringComparer.OrdinalIgnoreCase.Compare(_.Key, "objectid") == 0);
 
             if (idKey.Key != null &&
-                _documentProperties[idKey.Key].PropertyType != typeof(int) &&
-                _documentProperties[idKey.Key].PropertyType != typeof(Guid))
+                _typeReflector.Properties[idKey.Key].PropertyType != typeof(int) &&
+                _typeReflector.Properties[idKey.Key].PropertyType != typeof(Guid))
                 throw new InvalidOperationException("Id property must be of type Guid or Int32");
 
             _idPropertyName = idKey.Key;
             if (_idPropertyName != null)
             {
                 //default ObjectIdType.Guid
-                if (_documentProperties[_idPropertyName].PropertyType == typeof(int))
+                if (_typeReflector.Properties[_idPropertyName].PropertyType == typeof(int))
                     _typeOfObjectId = ObjectIdType.Int;
             }
         }
@@ -96,51 +94,43 @@ namespace NoSqlMapper
             await Database.Connection.SqlDatabaseProvider.UpdateAsync(Database.Name, Name, json, GetObjectId(document));
         }
 
-        //private NsDocument CreateNsDocument(T document)
-        //{
-        //    Validate.NotNull(document, nameof(document));
+        public async Task<T[]> FindAllAsync(Query.Query query, SortDescription[] sorts = null, int skip = 0,
+            int take = int.MaxValue)
+        {
+            Validate.NotNull(query, nameof(query));
 
-        //    if (document is IDictionary<string, object> dictionary)
-        //    {
-        //        return CreateNsDocumentFromDictionary(dictionary);
-        //    }
+            var documents =
+                await Database.Connection.SqlDatabaseProvider.QueryAsync(Database.Name, Name, _typeReflector, query, sorts, skip, take);
 
-        //    var nsDocument = CreateNsDocumentFromDictionary(
-        //        _documentProperties
-        //            .ToDictionary(_ => _.Key, _ => _.Value.GetValue(document)));
+            return documents.Select(_ =>
+            {
+                var documentObject = Database.Connection.JsonSerializer.Deserialize<T>(_.Json);
+                SetObjectId(documentObject, _.Id);
+                return documentObject;
+            }).ToArray();
+        }
 
-        //    return nsDocument;
-        //}
+        public async Task<T> FindAsync(object id)
+        {
+            Validate.NotNull(id, nameof(id));
 
+            var document =
+                await Database.Connection.SqlDatabaseProvider.FindAsync(Database.Name, Name, id);
 
-        //private NsDocument CreateNsDocumentFromDictionary(IDictionary<string, object> sourceDictionary)
-        //{
-        //    var dictionary = sourceDictionary;
+            if (document == null)
+                return null;
 
-        //    object objectId = null;
-        //    if (_idPropertyName != null)
-        //    {
-        //        objectId = dictionary[_idPropertyName];
-
-        //        dictionary.Remove(_idPropertyName);
-
-        //        if (_typeOfObjectId == typeof(Guid) &&
-        //            ((Guid) objectId) == Guid.Empty)
-        //            objectId = null;
-        //        else if (_typeOfObjectId == typeof(int) &&
-        //                 ((int) objectId) == 0)
-        //            objectId = null;
-        //    }
-
-        //    return new NsDocument(dictionary) { Id = objectId };
-        //}
+            var documentObject = Database.Connection.JsonSerializer.Deserialize<T>(document.Json);
+            SetObjectId(documentObject, document.Id);
+            return documentObject;
+        }
 
         private object GetObjectId(T document)
         {
             object objectId = null;
             if (_idPropertyName != null)
             {
-                objectId = _documentProperties[_idPropertyName].GetValue(document);
+                objectId = _typeReflector.Properties[_idPropertyName].GetValue(document);
 
                 if (_typeOfObjectId == ObjectIdType.Guid &&
                     ((Guid)objectId) == Guid.Empty)
@@ -158,7 +148,7 @@ namespace NoSqlMapper
             if (_idPropertyName == null)
                 return;
 
-            _documentProperties[_idPropertyName].SetValue(document, id);
+            _typeReflector.Properties[_idPropertyName].SetValue(document, id);
         }
     }
 
