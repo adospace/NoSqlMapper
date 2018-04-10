@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -8,7 +9,7 @@ namespace NoSqlMapper
 {
     public class TypeReflector
     {
-        private Type _type;
+        private readonly Type _type;
         internal TypeReflector(Type type)
         {
             Validate.NotNull(type, nameof(type));
@@ -39,6 +40,11 @@ namespace NoSqlMapper
             }
         }
 
+        public override string ToString()
+        {
+            return _type.ToString();
+        }
+
         public TypeReflector Navigate(string path)
         {
             Validate.NotNullOrEmptyOrWhiteSpace(path, nameof(path));
@@ -47,6 +53,17 @@ namespace NoSqlMapper
             if (path == ".")
                 return this;
 
+            return Navigate(_type, path);
+        }
+
+        public static TypeReflector Navigate(Type type, string path)
+        {
+            Validate.NotNullOrEmptyOrWhiteSpace(path, nameof(path));
+
+            path = path.Trim();
+            if (path == ".")
+                return new TypeReflector(type);
+
             var tokens = path.Split('.');
             var token = tokens.First();
             var arrayBracketIndex = token.IndexOf('[');
@@ -54,13 +71,25 @@ namespace NoSqlMapper
             if (isArrayToken)
                 token = token.Substring(0, arrayBracketIndex);
 
-            var properties = Properties;
+            var properties = type.GetProperties()
+                .Where(pi => pi.CanRead && pi.CanWrite)
+                .ToDictionary(_ => _.Name, _ => _, StringComparer.OrdinalIgnoreCase);
+
             if (properties.TryGetValue(token, out var foundProperty))
             {
-                if (tokens.Length > 1)
-                    return Navigate(string.Join(".", tokens.Skip(1)));
+                var propertyType = foundProperty.PropertyType;
 
-                return new TypeReflector(foundProperty.PropertyType);
+                if (propertyType.IsArray)
+                    propertyType = propertyType.GetElementType();
+                else if (propertyType.IsGenericType
+                         && propertyType.GetInterfaces().Any(x =>
+                             x.IsGenericType &&
+                             x.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
+                    propertyType = propertyType.GetGenericArguments()[0];
+
+                if (tokens.Length > 1)
+                    return Navigate(propertyType, string.Join(".", tokens.Skip(1)));
+                return new TypeReflector(propertyType);
             }
 
             return null;

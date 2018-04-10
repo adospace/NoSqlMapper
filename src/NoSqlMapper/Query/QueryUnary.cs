@@ -20,5 +20,10 @@ namespace NoSqlMapper.Query
             Op = op;
             Value = value;
         }
+
+        public override string ToString()
+        {
+            return $"( {Field} {Op} {Value} )";
+        }
     }
 }

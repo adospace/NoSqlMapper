@@ -20,5 +20,9 @@ namespace NoSqlMapper.Query
             Op = op;
         }
 
+        public override string ToString()
+        {
+            return $"( {Left} {Op} {Right} )";
+        }
     }
 }

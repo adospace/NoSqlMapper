@@ -7,17 +7,21 @@ namespace NoSqlMapper.SqlServer
 {
     internal static class QueryExtensions
     {
-        public static string ConvertToSql(this Query.Query query, List<KeyValuePair<int, object>> parameters)
+        public static string ConvertToSql(this Query.Query query, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters)
         {
             if (query is QueryUnary unary)
-                return ConvertToSql(unary, parameters);
+                return ConvertToSql(unary, typeReflector, parameters);
 
             throw new NotSupportedException();
         }
 
-        public static string ConvertToSql(this Query.QueryUnary queryUnary, List<KeyValuePair<int, object>> parameters)
+        public static string ConvertToSql(this Query.QueryUnary queryUnary, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters)
         {
             parameters.Add(new KeyValuePair<int, object>(parameters.Count + 1, queryUnary.Value));
+
+            var reflectedType = typeReflector.Navigate(queryUnary.Field);
+            if (reflectedType == null)
+                throw new InvalidOperationException($"Unable to find property '{queryUnary.Field}' on type '{typeReflector}'");
 
             if (queryUnary.Value is string)
                 return $"(JSON_VALUE(_document,'$.{queryUnary.Field}') {ConvertToSql(queryUnary.Op)} @{parameters.Count})";

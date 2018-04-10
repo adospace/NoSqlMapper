@@ -41,5 +41,7 @@ namespace NoSqlMapper.Test.Models
         public string Content { get; set; }
 
         public User Author { get; set; }
+
+        public Comment[] Replies { get; set; }
     }
 }

@@ -36,5 +36,15 @@ namespace NoSqlMapper.Query
         {
             return new QueryUnary(field, UnaryOperator.NotContains, value);
         }
+
+        public static Query IsNull([NotNull] string field, [NotNull] object value)
+        {
+            return new QueryIsNull(field);
+        }
+
+        public static Query IsNotNull([NotNull] string field, [NotNull] object value)
+        {
+            return new QueryIsNotNull(field);
+        }
     }
 }

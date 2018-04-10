@@ -191,7 +191,7 @@ namespace NoSqlMapper.SqlServer
 
             sql .Append($"USE [{databaseName}]")
                 .Append($"SELECT _id, _document FROM [dbo].[{tableName}]")
-                .Append($"WHERE ({query.ConvertToSql(parameters)})");
+                .Append($"WHERE ({query.ConvertToSql(typeReflector, parameters)})");
                 
             if (skip > 0)
                 sql.Append($"OFFSET {skip} ROWS");
@@ -201,8 +201,6 @@ namespace NoSqlMapper.SqlServer
 
             return await ExecuteReaderAsync(sql.ToArray(), parameters.ToDictionary(_ => $"@{_.Key}", _ => _.Value));
         }
-
-
 
         public Task<NsDocument> QueryFirstAsync(string databaseName, string tableName, TypeReflector typeReflector, Query.Query query, SortDescription[] sorts = null)
         {
