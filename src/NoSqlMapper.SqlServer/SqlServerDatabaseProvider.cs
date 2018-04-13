@@ -190,8 +190,7 @@ namespace NoSqlMapper.SqlServer
             var parameters = new List<KeyValuePair<int, object>>();
 
             sql .Append($"USE [{databaseName}]")
-                .Append($"SELECT _id, _document FROM [dbo].[{tableName}]")
-                .Append($"WHERE ({query.ConvertToSql(typeReflector, parameters)})");
+                .Append(query.ConvertToSql(typeReflector, tableName, parameters));
                 
             if (skip > 0)
                 sql.Append($"OFFSET {skip} ROWS");

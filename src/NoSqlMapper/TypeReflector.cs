@@ -10,6 +10,7 @@ namespace NoSqlMapper
     public class TypeReflector
     {
         private readonly Type _type;
+
         internal TypeReflector(Type type)
         {
             Validate.NotNull(type, nameof(type));
@@ -40,6 +41,13 @@ namespace NoSqlMapper
             }
         }
 
+        public bool Is(Type type)
+        {
+            return _type == type;
+        }
+
+        public Type Type => _type;
+
         public override string ToString()
         {
             return _type.ToString();
@@ -55,6 +63,8 @@ namespace NoSqlMapper
 
             return Navigate(_type, path);
         }
+
+
 
         public static TypeReflector Navigate(Type type, string path)
         {

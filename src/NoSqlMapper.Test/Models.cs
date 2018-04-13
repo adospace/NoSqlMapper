@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NoSqlMapper.Test.Models
+namespace NoSqlMapper.Test
 {
     public class PostWithoutId
     {

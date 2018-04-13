@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NoSqlMapper.JsonNET;
 using NoSqlMapper.SqlServer;
-using NoSqlMapper.Test.Models;
 
 namespace NoSqlMapper.Test
 {
@@ -153,8 +152,7 @@ namespace NoSqlMapper.Test
                 Assert.AreEqual(1, postFound.Count());
                 var post = postFound.Single();
                 Assert.AreEqual("title", post.Title);
-                Assert.AreEqual("desc", post.Description);
-                Assert.AreEqual("body", post.Body);
+                Assert.IsNull(post.Description);
             }
         }
 
