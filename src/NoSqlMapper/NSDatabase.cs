@@ -29,7 +29,7 @@ namespace NoSqlMapper
         {
             Validate.NotNullOrEmptyOrWhiteSpace(collectionName, nameof(collectionName));
 
-            await Connection.SqlDatabaseProvider.DeleteTableAsync(Name, collectionName);
+            await Connection.SqlDatabaseProvider.DeleteTableAsync(this, collectionName);
         }
 
     }

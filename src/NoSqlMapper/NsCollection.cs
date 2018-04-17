@@ -52,14 +52,14 @@ namespace NoSqlMapper
         {
             ReflectModelType();
 
-            await Database.Connection.SqlDatabaseProvider.EnsureTableAsync(Database.Name, Name, _typeOfObjectId);
+            await Database.Connection.SqlDatabaseProvider.EnsureTableAsync(Database, Name, _typeOfObjectId);
         }
 
         public async Task EnsureIndexAsync([NotNull] string field, bool unique = false, bool ascending = false)
         {
             Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
 
-            await Database.Connection.SqlDatabaseProvider.EnsureIndexAsync(Database.Name, Name, field, unique, ascending);
+            await Database.Connection.SqlDatabaseProvider.EnsureIndexAsync(Database, Name, field, unique, ascending);
         }
 
         public async Task<T> InsertAsync(T document)
@@ -69,7 +69,7 @@ namespace NoSqlMapper
             var json = Database.Connection.JsonSerializer.Serialize(document, _idPropertyName);
 
             var newlyCreatedId =
-                await Database.Connection.SqlDatabaseProvider.InsertAsync(Database.Name, Name, json, GetObjectId(document));
+                await Database.Connection.SqlDatabaseProvider.InsertAsync(Database, Name, json, GetObjectId(document));
 
             SetObjectId(document, newlyCreatedId);
 
@@ -82,7 +82,7 @@ namespace NoSqlMapper
 
             var json = Database.Connection.JsonSerializer.Serialize(document, _idPropertyName);
 
-            await Database.Connection.SqlDatabaseProvider.UpsertAsync(Database.Name, Name, json, GetObjectId(document));
+            await Database.Connection.SqlDatabaseProvider.UpsertAsync(Database, Name, json, GetObjectId(document));
         }
 
         public async Task UpdateAsync(T document)
@@ -91,7 +91,7 @@ namespace NoSqlMapper
 
             var json = Database.Connection.JsonSerializer.Serialize(document, _idPropertyName);
 
-            await Database.Connection.SqlDatabaseProvider.UpdateAsync(Database.Name, Name, json, GetObjectId(document));
+            await Database.Connection.SqlDatabaseProvider.UpdateAsync(Database, Name, json, GetObjectId(document));
         }
 
         public async Task<T[]> FindAllAsync(Query.Query query, SortDescription[] sorts = null, int skip = 0,
@@ -100,7 +100,7 @@ namespace NoSqlMapper
             Validate.NotNull(query, nameof(query));
 
             var documents =
-                await Database.Connection.SqlDatabaseProvider.QueryAsync(Database.Name, Name, _typeReflector, query, sorts, skip, take);
+                await Database.Connection.SqlDatabaseProvider.QueryAsync(Database, Name, _typeReflector, query, sorts, skip, take);
 
             return documents.Select(_ =>
             {
@@ -115,7 +115,7 @@ namespace NoSqlMapper
             Validate.NotNull(id, nameof(id));
 
             var document =
-                await Database.Connection.SqlDatabaseProvider.FindAsync(Database.Name, Name, id);
+                await Database.Connection.SqlDatabaseProvider.FindAsync(Database, Name, id);
 
             if (document == null)
                 return null;

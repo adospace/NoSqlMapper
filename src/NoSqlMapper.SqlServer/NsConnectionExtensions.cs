@@ -9,13 +9,19 @@ namespace NoSqlMapper.SqlServer
     {
         public static NsConnection UseSqlServer(this NsConnection connection, string connectionString)
         {
-            connection.SqlDatabaseProvider = new SqlServerDatabaseProvider(connectionString);
+            Validate.NotNull(connection, nameof(connection));
+            Validate.NotNullOrEmptyOrWhiteSpace(connectionString, nameof(connectionString));
+
+            connection.SqlDatabaseProvider = new SqlServerDatabaseProvider(connection, connectionString);
             return connection;
         }
 
         public static NsConnection UseSqlServer(this NsConnection connection, SqlConnection sqlConnection, bool ownConnection = false)
         {
-            connection.SqlDatabaseProvider = new SqlServerDatabaseProvider(sqlConnection, ownConnection);
+            Validate.NotNull(connection, nameof(connection));
+            Validate.NotNull(sqlConnection, nameof(sqlConnection));
+
+            connection.SqlDatabaseProvider = new SqlServerDatabaseProvider(connection, sqlConnection, ownConnection);
             return connection;
         }
 

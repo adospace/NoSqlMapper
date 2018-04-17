@@ -22,52 +22,52 @@ namespace NoSqlMapper
         Task CreateDatabaseIfNotExistsAsync([NotNull] string databaseName);
 
         [NotNull]
-        Task DeleteDatabaseAsync([NotNull] string databaseName);
+        Task DeleteDatabaseAsync([NotNull] NsDatabase database);
 
         [NotNull]
-        Task EnsureTableAsync([NotNull] string databaseName, [NotNull] string tableName, ObjectIdType objectIdType = ObjectIdType.Guid);
+        Task EnsureTableAsync([NotNull] NsDatabase database, [NotNull] string tableName, ObjectIdType objectIdType = ObjectIdType.Guid);
 
         [NotNull]
-        Task EnsureIndexAsync([NotNull] string databaseName, [NotNull] string tableName, [NotNull] string field, bool unique = false,
+        Task EnsureIndexAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string field, bool unique = false,
             bool ascending = true);
 
         [NotNull]
-        Task DeleteIndexAsync([NotNull] string databaseName, [NotNull] string tableName, [NotNull] string field);
+        Task DeleteIndexAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string field);
 
         [NotNull]
-        Task DeleteTableAsync([NotNull] string databaseName, [NotNull] string tableName);
+        Task DeleteTableAsync([NotNull] NsDatabase database, [NotNull] string tableName);
         #endregion
 
         #region Read
 
         [ItemNotNull]
-        Task<IEnumerable<NsDocument>> QueryAsync([NotNull] string databaseName, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query,
+        Task<IEnumerable<NsDocument>> QueryAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query,
             SortDescription[] sorts = null, int skip = 0, int take = 0);
 
         [ItemCanBeNull]
-        Task<NsDocument> QueryFirstAsync([NotNull] string databaseName, [NotNull] string tableName, TypeReflector typeReflector, 
+        Task<NsDocument> QueryFirstAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, 
             [NotNull] Query.Query query,
             SortDescription[] sorts = null);
 
         [ItemCanBeNull]
-        Task<NsDocument> FindAsync([NotNull] string databaseName, [NotNull] string tableName, [NotNull] object id);
+        Task<NsDocument> FindAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] object id);
 
         [NotNull]
-        Task<int> CountAsync([NotNull] string databaseName, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query);
+        Task<int> CountAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query);
         #endregion
 
         #region Create & Update & Delete
         [NotNull]
-        Task<object> InsertAsync([NotNull] string databaseName, [NotNull] string tableName, [NotNull] string json, object id = null);
+        Task<object> InsertAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string json, object id = null);
 
         [NotNull]
-        Task UpdateAsync([NotNull] string databaseName, [NotNull] string tableName, [NotNull] string json, [NotNull] object id);
+        Task UpdateAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string json, [NotNull] object id);
 
         [NotNull]
-        Task UpsertAsync([NotNull] string databaseName, [NotNull] string tableName, [NotNull] string json, [NotNull] object id);
+        Task UpsertAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string json, [NotNull] object id);
 
         [NotNull]
-        Task DeleteAsync([NotNull] string databaseName, [NotNull] string tableName, object id);
+        Task DeleteAsync([NotNull] NsDatabase database, [NotNull] string tableName, object id);
         #endregion
 
     }

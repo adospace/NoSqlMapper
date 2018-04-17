@@ -33,7 +33,7 @@ namespace NoSqlMapper
             }
         }
 
-        public ILogProvider LoggerProvider { get; set; }
+        public Action<string> Log { get; set; }
 
         public async Task<NsDatabase> GetDatabaseAsync(string databaseName)
         {

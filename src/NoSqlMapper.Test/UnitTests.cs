@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -20,31 +21,37 @@ namespace NoSqlMapper.Test
             Assert.AreEqual(typeof(List<Comment>), typePost.Properties["Comments"].PropertyType);
             Assert.AreEqual(typeof(string[]), typePost.Properties["Tags"].PropertyType);
 
-            var userType = typePost.Navigate("Author");
-            Assert.IsNotNull(userType);
-            Assert.AreEqual(typeof(string), userType.Properties["Username"].PropertyType);
+            var userTypes = TypeReflector.Navigate<Post>("Author.Username").ToList();
+            Assert.IsNotNull(userTypes);
+            Assert.AreEqual(typeof(User), userTypes[0].Type);
+            Assert.AreEqual(typeof(string), userTypes[1].Type);
 
+            var tagsType = TypeReflector.Navigate<Post>("Tags").ToList();
+            Assert.IsNotNull(tagsType);
+            Assert.IsTrue(tagsType[0].IsValueArray);
+            Assert.AreEqual(typeof(string), tagsType[0].Type);
 
-            var commentType = typePost.Navigate("Comments");
-            Assert.IsNotNull(commentType);
-            Assert.AreEqual(typeof(string), commentType.Properties["Content"].PropertyType);
+            var commentsType = TypeReflector.Navigate<Post>("Comments.Content").ToList();
+            Assert.IsNotNull(commentsType);
+            Assert.IsTrue(commentsType[0].IsObjectArray);
+            Assert.AreEqual(typeof(Comment), commentsType[0].Type);
+            Assert.AreEqual(typeof(string), commentsType[1].Type);
 
-            userType = typePost.Navigate("Comments.Author");
-            Assert.IsNotNull(userType);
-            Assert.AreEqual(typeof(string), userType.Properties["Username"].PropertyType);
+            userTypes = TypeReflector.Navigate<Post>("Comments.Author.Username").ToList();
+            Assert.IsNotNull(userTypes);
+            Assert.IsTrue(userTypes[0].IsObjectArray);
+            Assert.AreEqual(typeof(Comment), userTypes[0].Type);
+            Assert.AreEqual(typeof(User), userTypes[1].Type);
+            Assert.AreEqual(typeof(string), userTypes[2].Type);
 
-            userType = typePost.Navigate("Comments[0].Author");
-            Assert.IsNotNull(userType);
-            Assert.AreEqual(typeof(string), userType.Properties["Username"].PropertyType);
-
-            commentType = typePost.Navigate("Comments.Replies");
-            Assert.IsNotNull(commentType);
-            Assert.AreEqual(typeof(string), commentType.Properties["Content"].PropertyType);
-
-            userType = typePost.Navigate("Comments.Replies.Author");
-            Assert.IsNotNull(userType);
-            Assert.AreEqual(typeof(string), userType.Properties["Username"].PropertyType);
-
+            var replieTypes = TypeReflector.Navigate<Post>("Comments.Replies.Author.Username").ToList();
+            Assert.IsNotNull(replieTypes);
+            Assert.IsTrue(replieTypes[0].IsObjectArray);
+            Assert.AreEqual(typeof(Comment), replieTypes[0].Type);
+            Assert.IsTrue(replieTypes[1].IsObjectArray);
+            Assert.AreEqual(typeof(Comment), replieTypes[1].Type);
+            Assert.AreEqual(typeof(User), replieTypes[2].Type);
+            Assert.AreEqual(typeof(string), replieTypes[3].Type);
         }
     }
 }
