@@ -11,11 +11,16 @@ namespace NoSqlMapper.Test
     [TestClass]
     public class IntegrationTests
     {
+        public TestContext TestContext { get; set; }
+
+        private string ConnectionString => Environment.GetEnvironmentVariable("NO_SQL_MAPPER_TEST_CONNECTION_STRING") ?? 
+                                           throw new ArgumentException("Set NO_SQL_MAPPER_TEST_CONNECTION_STRING environmental variable containing connection string to Sql Server 2016+");
+
         [TestMethod]
         public async Task DatabaseTest_InsertWithoutId()
         {
             using (var nsClient = new NsConnection()
-                .UseSqlServer(@"Data Source=.\sql2017;Integrated Security=true")
+                .UseSqlServer(ConnectionString)
                 .UseJsonNET())
             {
                 var db = await nsClient.GetDatabaseAsync("Test_InsertWithoutId");
@@ -41,7 +46,7 @@ namespace NoSqlMapper.Test
         public async Task DatabaseTest_InsertWithId()
         {
             using (var nsClient = new NsConnection()
-                .UseSqlServer(@"Data Source=.\sql2017;Integrated Security=true")
+                .UseSqlServer(ConnectionString)
                 .UseJsonNET())
             {
                 var db = await nsClient.GetDatabaseAsync("Test_InsertWithId");
@@ -68,7 +73,7 @@ namespace NoSqlMapper.Test
         public async Task DatabaseTest_FindAll()
         {
             using (var nsClient = new NsConnection()
-                .UseSqlServer(@"Data Source=.\sql2017;Integrated Security=true")
+                .UseSqlServer(ConnectionString)
                 .UseJsonNET())
             {
                 var db = await nsClient.GetDatabaseAsync("DatabaseTest_FindAll");
@@ -99,7 +104,7 @@ namespace NoSqlMapper.Test
         public async Task DatabaseTest_FindByObjectId()
         {
             using (var nsClient = new NsConnection()
-                .UseSqlServer(@"Data Source=.\sql2017;Integrated Security=true")
+                .UseSqlServer(ConnectionString)
                 .UseJsonNET())
             {
                 var db = await nsClient.GetDatabaseAsync("DatabaseTest_FindByObjectId");
@@ -129,7 +134,7 @@ namespace NoSqlMapper.Test
         public async Task DatabaseTest_FindAll_ContainsArray()
         {
             using (var nsClient = new NsConnection()
-                .UseSqlServer(@"Data Source=.\sql2017;Integrated Security=true")
+                .UseSqlServer(ConnectionString)
                 .UseJsonNET())
             {
                 var db = await nsClient.GetDatabaseAsync("DatabaseTest_FindAll_ContainsArray");
@@ -158,7 +163,7 @@ namespace NoSqlMapper.Test
         public async Task DatabaseTest_FindAll_NotContainsArray()
         {
             using (var nsClient = new NsConnection()
-                .UseSqlServer(@"Data Source=.\sql2017;Integrated Security=true")
+                .UseSqlServer(ConnectionString)
                 .UseJsonNET())
             {
                 var db = await nsClient.GetDatabaseAsync("DatabaseTest_FindAll_ContainsArray");
@@ -185,7 +190,7 @@ namespace NoSqlMapper.Test
         public async Task DatabaseTest_FindAll_Collection1()
         {
             using (var nsClient = new NsConnection()
-                .UseSqlServer(@"Data Source=.\sql2017;Integrated Security=true")
+                .UseSqlServer(ConnectionString)
                 .UseJsonNET())
             {
                 var db = await nsClient.GetDatabaseAsync("DatabaseTest_FindAll_Collection1");
@@ -244,7 +249,7 @@ namespace NoSqlMapper.Test
         public async Task DatabaseTest_FindAll_Collection2()
         {
             using (var nsClient = new NsConnection()
-                .UseSqlServer(@"Data Source=.\sql2017;Integrated Security=true")
+                .UseSqlServer(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine)
             )
