@@ -76,7 +76,6 @@ namespace NoSqlMapper.SqlServer
             }
         }
 
-
         private static string ConvertToSqlWhere(this Query.Query query, 
             TypeReflector typeReflector, 
             List<KeyValuePair<int, object>> parameters,

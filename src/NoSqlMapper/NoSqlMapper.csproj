@@ -1,7 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Version Condition=" '$(APPVEYOR_BUILD_VERSION)' == '' ">0.0.1-local</Version>
+    <Version Condition=" '$(APPVEYOR_BUILD_VERSION)' != '' ">$(APPVEYOR_BUILD_VERSION)</Version>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>adospace</Authors>
+    <Description>NoSqlMapper is a small .NET standard library that let you store and query document-like records in RDBMS.
+It works with Sql Server 2016/2017 all version.</Description>
+    <Copyright>Adolfo Marinucci</Copyright>
+    <PackageProjectUrl>https://github.com/adospace/NoSqlMapper</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/adospace/NoSqlMapper/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/adospace/NoSqlMapper</RepositoryUrl>
+    <PackageTags>nosql sql server .net mapping document database</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>

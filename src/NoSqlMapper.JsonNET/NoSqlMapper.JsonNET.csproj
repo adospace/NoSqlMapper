@@ -1,7 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Version Condition=" '$(APPVEYOR_BUILD_VERSION)' == '' ">0.0.1-local</Version>
+    <Version Condition=" '$(APPVEYOR_BUILD_VERSION)' != '' ">$(APPVEYOR_BUILD_VERSION)</Version>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>adospace</Authors>
+    <Company>adospace</Company>
+    <Description>NoSqlMapper is a small .NET standard library that let you store and query document-like records in RDBMS.
+This is the Newtonsoft JsonNET binding</Description>
+    <Copyright>Adolfo Marinucci</Copyright>
+    <PackageLicenseUrl>https://github.com/adospace/NoSqlMapper/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/adospace/NoSqlMapper</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/adospace/NoSqlMapper</RepositoryUrl>
+    <PackageTags>nosql sql server .net mapping document database jsonnet</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
