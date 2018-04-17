@@ -6,7 +6,7 @@ using NoSqlMapper.Query;
 
 namespace NoSqlMapper.SqlServer
 {
-    internal static class QueryExtensions
+    internal static class SqlUtils
     {
         private class CrossApplyDefinition
         {
@@ -41,42 +41,41 @@ namespace NoSqlMapper.SqlServer
             public string ParentField { get; set; }
         }
 
-        public static string ConvertToSql(this Query.Query query, TypeReflector typeReflector, string tableName, List<KeyValuePair<int, object>> parameters)
+        public static string ConvertToSql(List<string> sqlLines, Query.Query query, TypeReflector typeReflector, string tableName, List<KeyValuePair<int, object>> parameters)
         {
             var crossApplyPaths = new Dictionary<string, CrossApplyDefinition>();
 
-            var whereClause = query.ConvertToSqlWhere(typeReflector, parameters, crossApplyPaths);
+            var whereClause = BuildSqlWhere(query, typeReflector, parameters, crossApplyPaths);
 
             //select *, JSON_VALUE(Replies.value, '$.Content') from [dbo].[posts] _doc
             //cross apply openjson(_doc._document, '$.Comments') WITH (Comments nvarchar(MAX) '$'  AS JSON)
             //cross apply openjson(Comments, '$.Replies') Replies
             //where JSON_VALUE(Comments, '$.Author.Username') = 'admin'
 
-            var sql = new List<string>();
-            sql.Append($"SELECT{(crossApplyPaths.Any() ? " DISTINCT" : string.Empty)} _id, _document FROM [dbo].[{tableName}] _doc");
+            sqlLines.Append($"SELECT{(crossApplyPaths.Any() ? " DISTINCT" : string.Empty)} _id, _document FROM [dbo].[{tableName}] _doc");
 
             foreach (var crossApplyDefinition in crossApplyPaths.Where(_=>_.Value.Parent == null).OrderBy(_=>_.Key))
             {
-                AppendCrossJoinApply(sql, crossApplyDefinition.Value);
+                AppendCrossJoinApply(sqlLines, crossApplyDefinition.Value);
             }
 
-            sql.Append($"WHERE ({whereClause})");
+            sqlLines.Append($"WHERE ({whereClause})");
 
-            return string.Join(Environment.NewLine, sql);
+            return string.Join(Environment.NewLine, sqlLines);
         }
 
-        private static void AppendCrossJoinApply(List<string> sql, CrossApplyDefinition definition)
+        private static void AppendCrossJoinApply(List<string> sqlLines, CrossApplyDefinition definition)
         {
-            sql.Append(
+            sqlLines.Append(
                 $"CROSS APPLY OPENJSON({(definition.Parent == null ? "_doc._document" : "[" + definition.Parent.Name + "]")}, '$.{definition.Name}') WITH ([{definition.Path}] nvarchar(MAX) '$' AS JSON)");
 
             foreach (var childDefinition in definition.Children)
             {
-                AppendCrossJoinApply(sql, childDefinition);
+                AppendCrossJoinApply(sqlLines, childDefinition);
             }
         }
 
-        private static string ConvertToSqlWhere(this Query.Query query, 
+        private static string BuildSqlWhere(Query.Query query, 
             TypeReflector typeReflector, 
             List<KeyValuePair<int, object>> parameters,
             IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
@@ -135,7 +134,7 @@ namespace NoSqlMapper.SqlServer
             };
         }
 
-        private static string ConvertToSqlWhere(this Query.QueryUnary queryUnary, TypeReflector typeReflector,
+        private static string ConvertToSqlWhere(QueryUnary queryUnary, TypeReflector typeReflector,
             List<KeyValuePair<int, object>> parameters, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
         {
             parameters.Add(new KeyValuePair<int, object>(parameters.Count + 1, queryUnary.Value));
@@ -159,7 +158,7 @@ namespace NoSqlMapper.SqlServer
         }
 
 
-        private static string ConvertToSqlWhere(this Query.QueryIsNull queryIsNull, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
+        private static string ConvertToSqlWhere(QueryIsNull queryIsNull, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
         {
             var reflectedType = typeReflector.Navigate(queryIsNull.Field);
             if (reflectedType == null)
@@ -168,7 +167,7 @@ namespace NoSqlMapper.SqlServer
             return $"JSON_VALUE(_document,'$.{queryIsNull.Field}') IS NULL";
         }
 
-        private static string ConvertToSqlWhere(this Query.QueryIsNotNull queryIsNotNull, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
+        private static string ConvertToSqlWhere(QueryIsNotNull queryIsNotNull, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
         {
             var reflectedType = typeReflector.Navigate(queryIsNotNull.Field);
             if (reflectedType == null)
@@ -176,14 +175,14 @@ namespace NoSqlMapper.SqlServer
             return $"JSON_VALUE(_document,'$.{queryIsNotNull.Field}') IS NOT NULL";
         }
 
-        private static string ConvertToSqlWhere(this Query.QueryBinary queryBinary, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
+        private static string ConvertToSqlWhere(QueryBinary queryBinary, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
         {
             Validate.NotNull(queryBinary.Left, nameof(queryBinary), "Left");
             Validate.NotNull(queryBinary.Right, nameof(queryBinary), "Right");
 
-            return $"({ConvertToSqlWhere(queryBinary.Left, typeReflector, parameters, crossApplyDefinitions)})" +
+            return $"({BuildSqlWhere(queryBinary.Left, typeReflector, parameters, crossApplyDefinitions)})" +
                    $" {(queryBinary.Op == LogicalOperator.And ? "AND" : "OR")} " +
-                   $"({ConvertToSqlWhere(queryBinary.Right, typeReflector, parameters, crossApplyDefinitions)})";
+                   $"({BuildSqlWhere(queryBinary.Right, typeReflector, parameters, crossApplyDefinitions)})";
         }
 
         private static string ConvertToSql(UnaryOperator op)
