@@ -61,8 +61,17 @@ namespace NoSqlMapper
         {
             Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
 
-            await Database.Connection.SqlDatabaseProvider.EnsureIndexAsync(Database, Name, field, unique, ascending);
+            await Database.Connection.SqlDatabaseProvider.EnsureIndexAsync(Database, Name, _typeReflector, field, unique, ascending);
         }
+
+        [NotNull]
+        public async Task DeleteIndexAsync([NotNull] string field)
+        {
+            Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
+
+            await Database.Connection.SqlDatabaseProvider.DeleteIndexAsync(Database, Name, field);
+        }
+
 
         [ItemNotNull]
         public async Task<T> InsertAsync([NotNull] T document)
@@ -100,11 +109,9 @@ namespace NoSqlMapper
         }
 
         [ItemNotNull]
-        public async Task<T[]> FindAsync([NotNull] Query.Query query, SortDescription[] sorts = null, int skip = 0,
+        public async Task<T[]> FindAsync(Query.Query query = null, SortDescription[] sorts = null, int skip = 0,
             int take = int.MaxValue)
         {
-            Validate.NotNull(query, nameof(query));
-
             var documents =
                 await Database.Connection.SqlDatabaseProvider.FindAsync(Database, Name, _typeReflector, query, sorts, skip, take);
 

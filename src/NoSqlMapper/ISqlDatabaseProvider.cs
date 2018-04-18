@@ -28,11 +28,11 @@ namespace NoSqlMapper
         Task EnsureTableAsync([NotNull] NsDatabase database, [NotNull] string tableName, ObjectIdType objectIdType = ObjectIdType.Guid);
 
         [NotNull]
-        Task EnsureIndexAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string field, bool unique = false,
+        Task EnsureIndexAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] string path, bool unique = false,
             bool ascending = true);
 
         [NotNull]
-        Task DeleteIndexAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string field);
+        Task DeleteIndexAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string path);
 
         [NotNull]
         Task DeleteTableAsync([NotNull] NsDatabase database, [NotNull] string tableName);
@@ -41,14 +41,14 @@ namespace NoSqlMapper
         #region Read
 
         [ItemNotNull]
-        Task<IEnumerable<NsDocument>> FindAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query,
+        Task<IEnumerable<NsDocument>> FindAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, Query.Query query = null,
             SortDescription[] sorts = null, int skip = 0, int take = 0);
 
         [ItemCanBeNull]
         Task<NsDocument> FindAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] object id);
 
         [NotNull]
-        Task<int> CountAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query);
+        Task<int> CountAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, Query.Query query = null);
         #endregion
 
         #region Create & Update & Delete

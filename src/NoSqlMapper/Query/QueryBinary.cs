@@ -11,7 +11,7 @@ namespace NoSqlMapper.Query
         [NotNull] public Query Right { get; }
         public LogicalOperator Op { get; }
 
-        public QueryBinary([NotNull] Query left, [NotNull] Query right, LogicalOperator op)
+        internal QueryBinary([NotNull] Query left, [NotNull] Query right, LogicalOperator op)
         {
             Validate.NotNull(left, nameof(left));
             Validate.NotNull(right, nameof(right));

@@ -382,5 +382,81 @@ namespace NoSqlMapper.Test
             }
         }
 
+        [TestMethod]
+        public async Task DatabaseTest_Index()
+        {
+            using (var nsClient = new NsConnection()
+                .UseSqlServer(ConnectionString)
+                .UseJsonNET()
+                .LogTo(Console.WriteLine)
+            )
+            {
+                var db = await nsClient.GetDatabaseAsync("DatabaseTest_Index");
+
+                await db.DeleteCollectionAsync("posts");
+
+                var posts = await db.GetCollectionAsync<Post>("posts");
+
+                await posts.InsertAsync(new Post()
+                {
+                    Title = "title of post 1",
+                    Tags = new[] { "tag1", "tag2" },
+                    Updated = DateTime.Now.AddDays(-1),
+                    Comments = new List<Comment>(new[]
+                    {
+                        new Comment()
+                        {
+                            Author = new User() {Username = "admin"},
+                            Content = "comment content",
+                            Updated = DateTime.Now.AddDays(-1),
+                            Replies = new[]
+                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
+                        }
+                    })
+                });
+
+                await posts.InsertAsync(new Post()
+                {
+                    Title = "title of post 2",
+                    Tags = new[] { "tag2" },
+                    Updated = DateTime.Now,
+                    FavoriteCount = 23,
+                    Comments = new List<Comment>(new[]
+                    {
+                        new Comment()
+                        {
+                            Author = new User() {Username = "admin"},
+                            Content = "comment content to post 2",
+                            Updated = DateTime.Now,
+                            Replies = new[]
+                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
+                        },
+                        new Comment()
+                        {
+                            Author = new User() {Username = "user2"},
+                            Content = "second comment content to post 2",
+                            Replies = new[]
+                                {new Comment() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
+                        }
+                    })
+                });
+
+                await posts.EnsureIndexAsync("Updated");
+
+                //delete even if not exists
+                await posts.DeleteIndexAsync("FavoriteCount");
+
+                await posts.EnsureIndexAsync("FavoriteCount");
+
+                //inspect query plan to find index usage
+                await posts.FindAllAsync(new SortDescription("FavoriteCount", SortOrder.Descending));
+
+                await posts.DeleteIndexAsync("FavoriteCount");
+
+                //inspect query plan to not find index usage
+                await posts.FindAllAsync(new SortDescription("FavoriteCount", SortOrder.Descending));
+            }
+        }
+
     }
 }

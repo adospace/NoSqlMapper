@@ -44,10 +44,10 @@ namespace NoSqlMapper.SqlServer
         }
 
         public static string ConvertToSql(List<string> sqlLines, 
-            Query.Query query, 
             TypeReflector typeReflector, 
             string tableName, 
             List<KeyValuePair<int, object>> parameters,
+            Query.Query query = null,
             SortDescription[] sorts = null, 
             bool selectCount = false)
         {
@@ -62,7 +62,9 @@ namespace NoSqlMapper.SqlServer
 
             var crossApplyPaths = new Dictionary<string, CrossApplyDefinition>();
 
-            var whereClause = BuildSqlWhere(query, typeReflector, parameters, crossApplyPaths);
+            string whereClause = null;
+            if (query != null)
+                whereClause = BuildSqlWhere(query, typeReflector, parameters, crossApplyPaths);
 
             string orderByClause = null;
             if (sorts != null && sorts.Any())
@@ -72,7 +74,7 @@ namespace NoSqlMapper.SqlServer
             }
 
             if (selectCount)
-                sqlLines.Append($"SELECT COUNT (_id) FROM [dbo].[{tableName}] _doc");
+                sqlLines.Append($"SELECT COUNT (DISTINCT _id) FROM [dbo].[{tableName}] _doc");
             else
                 sqlLines.Append($"SELECT _id, _document FROM [dbo].[{tableName}] _doc");
 
@@ -81,7 +83,8 @@ namespace NoSqlMapper.SqlServer
                 AppendCrossJoinApply(sqlLines, crossApplyDefinition.Value);
             }
 
-            sqlLines.Append($"WHERE ({whereClause})");
+            if (whereClause != null)
+                sqlLines.Append($"WHERE ({whereClause})");
 
             if (!selectCount && crossApplyPaths.Any())
             {
@@ -191,15 +194,21 @@ namespace NoSqlMapper.SqlServer
             if (reflectedType.Type.Is(typeof(string)))
                 return
                     $"JSON_VALUE([{reflectedType.ParentField}],'$.{reflectedType.Path}') {ConvertToSql(queryUnary.Op)} @{parameters.Count}";
+            if (reflectedType.Type.Is(typeof(string)))
+                return
+                    $"CONVERT([datetime2], JSON_VALUE([{reflectedType.ParentField}],'$.{reflectedType.Path}'), 102) {ConvertToSql(queryUnary.Op)} @{parameters.Count}";
 
             return
-                $"CAST(JSON_VALUE([{reflectedType.ParentField}],'$.{reflectedType.Path}') AS {ConvertToSql(reflectedType.Type.Type)}) {ConvertToSql(queryUnary.Op)} @{parameters.Count}";
+                $"CONVERT({ConvertToSql(reflectedType.Type.Type)}, JSON_VALUE([{reflectedType.ParentField}],'$.{reflectedType.Path}')) {ConvertToSql(queryUnary.Op)} @{parameters.Count}";
         }
 
         private static string ConvertToSqlOrderBy(SortDescription sort, TypeReflector typeReflector,
             IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
         {
             var reflectedType = ResolveField(sort.Field, typeReflector, crossApplyDefinitions, true);
+
+            if (reflectedType.Type.Is(typeof(int)))
+                return $"CONVERT([int],JSON_VALUE([{reflectedType.ParentField}],'$.{reflectedType.Path}')) {(sort.Order == SortOrder.Descending ? "DESC" : "ASC")}";
 
             return
                 $"JSON_VALUE([{reflectedType.ParentField}],'$.{reflectedType.Path}') {(sort.Order == SortOrder.Descending ? "DESC" : "ASC")}";
@@ -256,7 +265,9 @@ namespace NoSqlMapper.SqlServer
         private static string ConvertToSql(Type type)
         {
             if (type == typeof(int))
-                return "INT";
+                return "int";
+            if (type == typeof(DateTime))
+                return "datetime2";
 
             throw new ArgumentOutOfRangeException(nameof(type), type, null);
         }

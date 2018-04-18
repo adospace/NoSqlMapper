@@ -219,22 +219,57 @@ namespace NoSqlMapper.SqlServer
                 $"END");
         }
 
-        public async Task EnsureIndexAsync(NsDatabase database, string tableName, string field, bool unique = false, bool ascending = true)
+        public async Task EnsureIndexAsync(NsDatabase database, string tableName, TypeReflector typeReflector, string path, bool unique = false, bool ascending = true)
         {
             Validate.NotNull(database, nameof(database));
             Validate.NotNullOrEmptyOrWhiteSpace(tableName, nameof(tableName));
-            Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
+            Validate.NotNullOrEmptyOrWhiteSpace(path, nameof(path));
+            Validate.NotNull(typeReflector, nameof(typeReflector));
 
-            var columnName = field.Replace(".", "_");
+            /*
+             USE [DatabaseTest_Index]
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[posts]') AND name = 'Updated')
+            BEGIN
+            ALTER TABLE [dbo].[Posts]
+            ADD [Updated] AS (CONVERT(datetime2, JSON_VALUE([_document],'$.Updated'), 102))
+            END
+            IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name = 'IDX_Updated' AND object_id = OBJECT_ID('posts'))
+            BEGIN CREATE  NONCLUSTERED INDEX [IDX_Updated] ON [dbo].[posts]
+            ( [Updated] DESC )
+            WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+            END
+             */
+
+            var fieldTypes = typeReflector.Navigate(path).ToList();
+
+            if (!fieldTypes.Any())
+                throw new InvalidOperationException($"Path '{path}' doesn't represent a valid property");
+
+            if (fieldTypes.Any(_=>_.IsArray))
+                throw new InvalidOperationException($"Unable to create an index for path '{path}', it traverses arrays or collections of objects");
+
+            var columnName = path.Replace(".", "_");
+            string addColumnCommand = null;
+            var lastFieldType = fieldTypes.Last();
+            if (lastFieldType.Is(typeof(DateTime)))
+                addColumnCommand = $"ADD [{columnName}] AS (CONVERT(datetime2, JSON_VALUE([_document],'$.{path}'), 102))";
+            else if (lastFieldType.Is(typeof(int)))
+                addColumnCommand = $"ADD [{columnName}] AS (CONVERT(int, JSON_VALUE([_document],'$.{path}')))";
+            
+            if (addColumnCommand == null)
+            {
+                throw new InvalidOperationException($"Type '{lastFieldType.Type}' is not (yet?) supported for indexes");    
+            }
+
             await ExecuteNonQueryAsync( 
                 $"USE [{database.Name}]",
                 $"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N\'[dbo].[{tableName}]\') AND name = \'{columnName}\')",
                 $"BEGIN",
                 $"ALTER TABLE [dbo].[Posts]",
-                $"ADD [{columnName}] AS (json_value([__document],\'$.{field}\'))",
+                addColumnCommand,
                 $"END",
                 $"IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name = \'IDX_{columnName}\' AND object_id = OBJECT_ID(\'{tableName}\'))",
-                $"BEGIN"+
+                $"BEGIN",
                 $"CREATE {(unique ? "UNIQUE" : string.Empty)} NONCLUSTERED INDEX [IDX_{columnName}] ON [dbo].[{tableName}]",
                 $"( [{columnName}] {(ascending ? "ASC" : "DESC")} )",
                 $"WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]",
@@ -247,7 +282,10 @@ namespace NoSqlMapper.SqlServer
             var columnName = field.Replace(".", "_");
             await ExecuteNonQueryAsync( 
                 $"USE [{database.Name}]",
-                $"DROP INDEX [IDX_{columnName}] ON [dbo].[{tableName}]");
+                $"IF EXISTS(SELECT * FROM sys.indexes WHERE name = \'IDX_{columnName}\' AND object_id = OBJECT_ID(\'{tableName}\'))",
+                $"BEGIN",
+                $"DROP INDEX [IDX_{columnName}] ON [dbo].[{tableName}]",
+                $"END");
         }
 
         public async Task DeleteTableAsync(NsDatabase database, string tableName)
@@ -261,18 +299,17 @@ namespace NoSqlMapper.SqlServer
                 $"END");
         }
 
-        public async Task<IEnumerable<NsDocument>> FindAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query, SortDescription[] sorts = null, int skip = 0, int take = 0)
+        public async Task<IEnumerable<NsDocument>> FindAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query = null, SortDescription[] sorts = null, int skip = 0, int take = 0)
         {
             Validate.NotNull(database, nameof(database));
             Validate.NotNullOrEmptyOrWhiteSpace(tableName, nameof(tableName));
-            Validate.NotNull(query, nameof(query));
 
             var sql = new List<string>();
             var parameters = new List<KeyValuePair<int, object>>();
 
             sql.Append($"USE [{database.Name}]");
                 
-            SqlUtils.ConvertToSql(sql, query, typeReflector, tableName, parameters, sorts);
+            SqlUtils.ConvertToSql(sql, typeReflector, tableName, parameters, query, sorts);
                 
             if (skip > 0)
                 sql.Append($"OFFSET {skip} ROWS");
@@ -298,18 +335,17 @@ namespace NoSqlMapper.SqlServer
                 .FirstOrDefault();
         }
 
-        public async Task<int> CountAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query)
+        public async Task<int> CountAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query = null)
         {
             Validate.NotNull(database, nameof(database));
             Validate.NotNullOrEmptyOrWhiteSpace(tableName, nameof(tableName));
-            Validate.NotNull(query, nameof(query));
 
             var sql = new List<string>();
             var parameters = new List<KeyValuePair<int, object>>();
 
             sql.Append($"USE [{database.Name}]");
 
-            SqlUtils.ConvertToSql(sql, query, typeReflector, tableName, parameters, selectCount: true);
+            SqlUtils.ConvertToSql(sql, typeReflector, tableName, parameters, query, selectCount: true);
 
             return (int) (await ExecuteNonQueryAsync(sql.ToArray(),
                 parameters.ToDictionary(_ => $"@{_.Key}", _ => _.Value), executeAsScalar: true));
