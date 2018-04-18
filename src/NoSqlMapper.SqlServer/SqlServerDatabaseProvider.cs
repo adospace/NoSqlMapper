@@ -104,7 +104,7 @@ namespace NoSqlMapper.SqlServer
         }
 
         private async Task<object> ExecuteNonQueryAsync(string[] sqlLines, IDictionary<string, object> parameters,
-            bool generateIndetity = false)
+            bool executeAsScalar = false)
         {
             await EnsureConnectionAsync();
             try
@@ -119,7 +119,7 @@ namespace NoSqlMapper.SqlServer
                     foreach (var paramEntry in parameters)
                         cmd.Parameters.AddWithValue(paramEntry.Key, paramEntry.Value);
 
-                    if (generateIndetity)
+                    if (executeAsScalar)
                         return await cmd.ExecuteScalarAsync();
 
                     await cmd.ExecuteNonQueryAsync();
@@ -261,7 +261,7 @@ namespace NoSqlMapper.SqlServer
                 $"END");
         }
 
-        public async Task<IEnumerable<NsDocument>> QueryAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query, SortDescription[] sorts = null, int skip = 0, int take = 0)
+        public async Task<IEnumerable<NsDocument>> FindAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query, SortDescription[] sorts = null, int skip = 0, int take = 0)
         {
             Validate.NotNull(database, nameof(database));
             Validate.NotNullOrEmptyOrWhiteSpace(tableName, nameof(tableName));
@@ -272,7 +272,7 @@ namespace NoSqlMapper.SqlServer
 
             sql.Append($"USE [{database.Name}]");
                 
-            SqlUtils.ConvertToSql(sql, query, typeReflector, tableName, parameters);
+            SqlUtils.ConvertToSql(sql, query, typeReflector, tableName, parameters, sorts);
                 
             if (skip > 0)
                 sql.Append($"OFFSET {skip} ROWS");
@@ -281,11 +281,6 @@ namespace NoSqlMapper.SqlServer
                 sql.Append($"FETCH NEXT {take} ROWS ONLY");
 
             return await ExecuteReaderAsync(sql.ToArray(), parameters.ToDictionary(_ => $"@{_.Key}", _ => _.Value));
-        }
-
-        public Task<NsDocument> QueryFirstAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query, SortDescription[] sorts = null)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task<NsDocument> FindAsync(NsDatabase database, string tableName, object id)
@@ -303,9 +298,21 @@ namespace NoSqlMapper.SqlServer
                 .FirstOrDefault();
         }
 
-        public Task<int> CountAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query)
+        public async Task<int> CountAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query)
         {
-            throw new NotImplementedException();
+            Validate.NotNull(database, nameof(database));
+            Validate.NotNullOrEmptyOrWhiteSpace(tableName, nameof(tableName));
+            Validate.NotNull(query, nameof(query));
+
+            var sql = new List<string>();
+            var parameters = new List<KeyValuePair<int, object>>();
+
+            sql.Append($"USE [{database.Name}]");
+
+            SqlUtils.ConvertToSql(sql, query, typeReflector, tableName, parameters, selectCount: true);
+
+            return (int) (await ExecuteNonQueryAsync(sql.ToArray(),
+                parameters.ToDictionary(_ => $"@{_.Key}", _ => _.Value), executeAsScalar: true));
         }
 
         public async Task<object> InsertAsync(NsDatabase database, string tableName, string json, object id)
@@ -332,7 +339,7 @@ namespace NoSqlMapper.SqlServer
                                {"@id", id},
                                {"@document", json}
                            },
-                           generateIndetity: false);
+                           executeAsScalar: false);
 
                 return id;
             }
@@ -350,7 +357,7 @@ namespace NoSqlMapper.SqlServer
                        {
                            {"@document", json}
                        },
-                       generateIndetity: true);
+                       executeAsScalar: true);
         }
 
         public Task UpdateAsync(NsDatabase database, string tableName, string json, object id)

@@ -43,5 +43,8 @@ namespace NoSqlMapper.Test
         public User Author { get; set; }
 
         public Comment[] Replies { get; set; }
+
+        public DateTime Updated { get; set; }
+
     }
 }

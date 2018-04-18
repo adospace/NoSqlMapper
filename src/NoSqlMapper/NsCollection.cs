@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -55,6 +56,7 @@ namespace NoSqlMapper
             await Database.Connection.SqlDatabaseProvider.EnsureTableAsync(Database, Name, _typeOfObjectId);
         }
 
+        [NotNull]
         public async Task EnsureIndexAsync([NotNull] string field, bool unique = false, bool ascending = false)
         {
             Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
@@ -62,7 +64,8 @@ namespace NoSqlMapper
             await Database.Connection.SqlDatabaseProvider.EnsureIndexAsync(Database, Name, field, unique, ascending);
         }
 
-        public async Task<T> InsertAsync(T document)
+        [ItemNotNull]
+        public async Task<T> InsertAsync([NotNull] T document)
         {
             Validate.NotNull(document, nameof(document));
 
@@ -76,7 +79,8 @@ namespace NoSqlMapper
             return document;
         }
 
-        public async Task UpsertAsync(T document)
+        [NotNull]
+        public async Task UpsertAsync([NotNull] T document)
         {
             Validate.NotNull(document, nameof(document));
 
@@ -85,7 +89,8 @@ namespace NoSqlMapper
             await Database.Connection.SqlDatabaseProvider.UpsertAsync(Database, Name, json, GetObjectId(document));
         }
 
-        public async Task UpdateAsync(T document)
+        [NotNull]
+        public async Task UpdateAsync([NotNull] T document)
         {
             Validate.NotNull(document, nameof(document));
 
@@ -94,13 +99,14 @@ namespace NoSqlMapper
             await Database.Connection.SqlDatabaseProvider.UpdateAsync(Database, Name, json, GetObjectId(document));
         }
 
-        public async Task<T[]> FindAllAsync(Query.Query query, SortDescription[] sorts = null, int skip = 0,
+        [ItemNotNull]
+        public async Task<T[]> FindAsync([NotNull] Query.Query query, SortDescription[] sorts = null, int skip = 0,
             int take = int.MaxValue)
         {
             Validate.NotNull(query, nameof(query));
 
             var documents =
-                await Database.Connection.SqlDatabaseProvider.QueryAsync(Database, Name, _typeReflector, query, sorts, skip, take);
+                await Database.Connection.SqlDatabaseProvider.FindAsync(Database, Name, _typeReflector, query, sorts, skip, take);
 
             return documents.Select(_ =>
             {
@@ -110,6 +116,7 @@ namespace NoSqlMapper
             }).ToArray();
         }
 
+        [ItemCanBeNull]
         public async Task<T> FindAsync(object id)
         {
             Validate.NotNull(id, nameof(id));
@@ -123,6 +130,14 @@ namespace NoSqlMapper
             var documentObject = Database.Connection.JsonSerializer.Deserialize<T>(document.Json);
             SetObjectId(documentObject, document.Id);
             return documentObject;
+        }
+
+        [NotNull]
+        public async Task<int> CountAsync([NotNull] Query.Query query)
+        {
+            Validate.NotNull(query, nameof(query));
+
+            return await Database.Connection.SqlDatabaseProvider.CountAsync(Database, Name, _typeReflector, query);
         }
 
         private object GetObjectId(T document)

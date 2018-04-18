@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NoSqlMapper.JsonNET;
+using NoSqlMapper.Query;
 using NoSqlMapper.SqlServer;
 
 namespace NoSqlMapper.Test
@@ -89,7 +90,7 @@ namespace NoSqlMapper.Test
                     Body = "body",
                 });
 
-                var postFound = await posts.FindAllAsync(Query.Query.Eq("Title", "title"));
+                var postFound = await posts.FindAsync(Query.Query.Eq("Title", "title"));
 
                 Assert.IsNotNull(postFound);
                 Assert.AreEqual(1, postFound.Count());
@@ -149,7 +150,7 @@ namespace NoSqlMapper.Test
                     Tags = new[] {"tag1", "tag2"},
                 });
 
-                var postFound = await posts.FindAllAsync(Query.Query.Contains("Tags", "tag1"));
+                var postFound = await posts.FindAsync(Query.Query.Contains("Tags", "tag1"));
 
                 Assert.IsNotNull(postFound);
                 Assert.AreEqual(1, postFound.Count());
@@ -178,7 +179,7 @@ namespace NoSqlMapper.Test
                     Tags = new[] { "tag1", "tag2" },
                 });
 
-                var postFound = await posts.FindAllAsync(Query.Query.NotContains("Tags", "tag1"));
+                var postFound = await posts.FindAsync(Query.Query.NotContains("Tags", "tag1"));
 
                 Assert.IsNotNull(postFound);
                 Assert.AreEqual(0, postFound.Count());
@@ -238,7 +239,7 @@ namespace NoSqlMapper.Test
                     })
                 });
 
-                var postFound = await posts.FindAllAsync(Query.Query.Eq("Comments.Author.Username", "admin"));
+                var postFound = await posts.FindAsync(Query.Query.Eq("Comments.Author.Username", "admin"));
 
                 Assert.IsNotNull(postFound);
                 Assert.AreEqual(2, postFound.Count());
@@ -283,14 +284,100 @@ namespace NoSqlMapper.Test
                     })
                 });
 
-                var postFound = await posts.FindAllAsync(Query.Query.Or(
+                var query = Query.Query.Or(
                     Query.Query.Eq("Comments.Author.Username", "admin"),
-                    Query.Query.Eq("Comments.Replies.Author.Username", "admin")));
+                    Query.Query.Eq("Comments.Replies.Author.Username", "admin"));
 
-                Assert.IsNotNull(postFound);
-                Assert.AreEqual(1, postFound.Count());
-                var post = postFound.Single();
+                var postFoundCount = await posts.CountAsync(query);
+                Assert.AreEqual(1, postFoundCount);
+
+                var postsFound = await posts.FindAsync(query);
+
+                Assert.IsNotNull(postsFound);
+                Assert.AreEqual(1, postsFound.Count());
+                var post = postsFound.Single();
                 Assert.AreEqual("title of post 2", post.Title);
+                Assert.IsNull(post.Description);
+            }
+        }
+
+        [TestMethod]
+        public async Task DatabaseTest_FindAll_Collection3_Sort()
+        {
+            using (var nsClient = new NsConnection()
+                .UseSqlServer(ConnectionString)
+                .UseJsonNET()
+                .LogTo(Console.WriteLine)
+            )
+            {
+                var db = await nsClient.GetDatabaseAsync("DatabaseTest_FindAll_Collection3_Sort");
+
+                await db.DeleteCollectionAsync("posts");
+
+                var posts = await db.GetCollectionAsync<Post>("posts");
+
+                await posts.InsertAsync(new Post()
+                {
+                    Title = "title of post 1",
+                    Tags = new[] { "tag1", "tag2" },
+                    Updated = DateTime.Now.AddDays(-1),
+                    Comments = new List<Comment>(new[]
+                    {
+                        new Comment()
+                        {
+                            Author = new User() {Username = "admin"},
+                            Content = "comment content",
+                            Updated = DateTime.Now.AddDays(-1),
+                            Replies = new[]
+                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
+                        }
+                    })
+                });
+
+                await posts.InsertAsync(new Post()
+                {
+                    Title = "title of post 2",
+                    Tags = new[] { "tag2" },
+                    Updated = DateTime.Now,
+                    Comments = new List<Comment>(new[]
+                    {
+                        new Comment()
+                        {
+                            Author = new User() {Username = "admin"},
+                            Content = "comment content to post 2",
+                            Updated = DateTime.Now,
+                            Replies = new[]
+                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
+                        },
+                        new Comment()
+                        {
+                            Author = new User() {Username = "user2"},
+                            Content = "second comment content to post 2",
+                            Replies = new[]
+                                {new Comment() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
+                        }
+                    })
+                });
+
+                var query = Query.Query.Eq("Comments.Author.Username", "admin");
+
+                var postFoundCount = await posts.CountAsync(query);
+                Assert.AreEqual(2, postFoundCount);
+
+                var postsFound = await posts.FindAsync(query, new[] {new SortDescription("Updated", SortOrder.Descending)});
+
+                Assert.IsNotNull(postsFound);
+                Assert.AreEqual(2, postsFound.Count());
+                var post = postsFound.First();
+                Assert.AreEqual("title of post 2", post.Title);
+                Assert.IsNull(post.Description);
+
+                postsFound = await posts.FindAsync(query, new[] { new SortDescription("Comments.Updated", SortOrder.Ascending) });
+
+                Assert.IsNotNull(postsFound);
+                Assert.AreEqual(2, postsFound.Count());
+                post = postsFound.First();
+                Assert.AreEqual("title of post 1", post.Title);
                 Assert.IsNull(post.Description);
             }
         }

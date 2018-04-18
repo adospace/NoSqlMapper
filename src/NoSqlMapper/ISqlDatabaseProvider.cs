@@ -41,13 +41,8 @@ namespace NoSqlMapper
         #region Read
 
         [ItemNotNull]
-        Task<IEnumerable<NsDocument>> QueryAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query,
+        Task<IEnumerable<NsDocument>> FindAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, [NotNull] Query.Query query,
             SortDescription[] sorts = null, int skip = 0, int take = 0);
-
-        [ItemCanBeNull]
-        Task<NsDocument> QueryFirstAsync([NotNull] NsDatabase database, [NotNull] string tableName, TypeReflector typeReflector, 
-            [NotNull] Query.Query query,
-            SortDescription[] sorts = null);
 
         [ItemCanBeNull]
         Task<NsDocument> FindAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] object id);

@@ -32,6 +32,8 @@ namespace NoSqlMapper.SqlServer
             public string Name { get; set; }
 
             public string Path => Parent == null ? Name : string.Concat(Parent.Path, ".", Name);
+
+            public bool AppendToGroupBy { get; set; }
         }
 
         private class FieldType
@@ -41,18 +43,38 @@ namespace NoSqlMapper.SqlServer
             public string ParentField { get; set; }
         }
 
-        public static string ConvertToSql(List<string> sqlLines, Query.Query query, TypeReflector typeReflector, string tableName, List<KeyValuePair<int, object>> parameters)
+        public static string ConvertToSql(List<string> sqlLines, 
+            Query.Query query, 
+            TypeReflector typeReflector, 
+            string tableName, 
+            List<KeyValuePair<int, object>> parameters,
+            SortDescription[] sorts = null, 
+            bool selectCount = false)
         {
+            /*--SAMPLE QUERY
+            USE [DatabaseTest_FindAll_Collection3_Sort]
+            SELECT _id, _document FROM [dbo].[posts] _doc
+            CROSS APPLY OPENJSON(_doc._document, '$.Comments') WITH ([Comments] nvarchar(MAX) '$' AS JSON)
+            WHERE (JSON_VALUE([Comments],'$.Author.Username') = 'admin')
+            GROUP BY _id, _document, [Comments]
+            ORDER BY JSON_VALUE([Comments],'$.Updated') ASC             
+             */
+
             var crossApplyPaths = new Dictionary<string, CrossApplyDefinition>();
 
             var whereClause = BuildSqlWhere(query, typeReflector, parameters, crossApplyPaths);
 
-            //select *, JSON_VALUE(Replies.value, '$.Content') from [dbo].[posts] _doc
-            //cross apply openjson(_doc._document, '$.Comments') WITH (Comments nvarchar(MAX) '$'  AS JSON)
-            //cross apply openjson(Comments, '$.Replies') Replies
-            //where JSON_VALUE(Comments, '$.Author.Username') = 'admin'
+            string orderByClause = null;
+            if (sorts != null && sorts.Any())
+            {
+                orderByClause =
+                    $"ORDER BY {string.Join(",", sorts.Select(_ => ConvertToSqlOrderBy(_, typeReflector, crossApplyPaths)))}";
+            }
 
-            sqlLines.Append($"SELECT{(crossApplyPaths.Any() ? " DISTINCT" : string.Empty)} _id, _document FROM [dbo].[{tableName}] _doc");
+            if (selectCount)
+                sqlLines.Append($"SELECT COUNT (_id) FROM [dbo].[{tableName}] _doc");
+            else
+                sqlLines.Append($"SELECT _id, _document FROM [dbo].[{tableName}] _doc");
 
             foreach (var crossApplyDefinition in crossApplyPaths.Where(_=>_.Value.Parent == null).OrderBy(_=>_.Key))
             {
@@ -60,6 +82,20 @@ namespace NoSqlMapper.SqlServer
             }
 
             sqlLines.Append($"WHERE ({whereClause})");
+
+            if (!selectCount && crossApplyPaths.Any())
+            {
+                if (crossApplyPaths.Any(_ => _.Value.AppendToGroupBy))
+                {
+                    sqlLines.Append(
+                        $"GROUP BY _id, _document, {string.Join(", ", crossApplyPaths.Where(_ => _.Value.AppendToGroupBy).Select(_ => "[" + _.Value.Path + "]"))}");
+                }
+                else
+                    sqlLines.Append($"GROUP BY _id, _document");
+            }
+
+            if (orderByClause != null)
+                sqlLines.Add(orderByClause);
 
             return string.Join(Environment.NewLine, sqlLines);
         }
@@ -95,7 +131,7 @@ namespace NoSqlMapper.SqlServer
             throw new NotSupportedException();
         }
 
-        private static FieldType ResolveField(string originalPath, TypeReflector typeReflector, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
+        private static FieldType ResolveField(string originalPath, TypeReflector typeReflector, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions, bool appendToGroupByClause = false)
         {
             var fieldTypes = typeReflector.Navigate(originalPath).ToList();
             var resultingPath = new List<string>();
@@ -117,6 +153,9 @@ namespace NoSqlMapper.SqlServer
                     };
 
                     crossApplyDefinitions[lastCrossApplyDefinition.Name] = lastCrossApplyDefinition;
+                    if (appendToGroupByClause)
+                        lastCrossApplyDefinition.AppendToGroupBy = true;
+
                     tempPath.Clear();
                 }
                 else
@@ -157,6 +196,14 @@ namespace NoSqlMapper.SqlServer
                 $"CAST(JSON_VALUE([{reflectedType.ParentField}],'$.{reflectedType.Path}') AS {ConvertToSql(reflectedType.Type.Type)}) {ConvertToSql(queryUnary.Op)} @{parameters.Count}";
         }
 
+        private static string ConvertToSqlOrderBy(SortDescription sort, TypeReflector typeReflector,
+            IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
+        {
+            var reflectedType = ResolveField(sort.Field, typeReflector, crossApplyDefinitions, true);
+
+            return
+                $"JSON_VALUE([{reflectedType.ParentField}],'$.{reflectedType.Path}') {(sort.Order == SortOrder.Descending ? "DESC" : "ASC")}";
+        }
 
         private static string ConvertToSqlWhere(QueryIsNull queryIsNull, TypeReflector typeReflector, List<KeyValuePair<int, object>> parameters, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
         {
