@@ -137,6 +137,10 @@ namespace NoSqlMapper.SqlServer
         private static FieldType ResolveField(string originalPath, TypeReflector typeReflector, IDictionary<string, CrossApplyDefinition> crossApplyDefinitions, bool appendToGroupByClause = false)
         {
             var fieldTypes = typeReflector.Navigate(originalPath).ToList();
+
+            if (!fieldTypes.Any())
+                throw new InvalidOperationException($"Property '{originalPath}' is invalid");
+
             var resultingPath = new List<string>();
             var tempPath = new List<string>();
             CrossApplyDefinition lastCrossApplyDefinition = null;
@@ -181,6 +185,9 @@ namespace NoSqlMapper.SqlServer
         {
             parameters.Add(new KeyValuePair<int, object>(parameters.Count + 1, queryUnary.Value));
 
+            if (queryUnary.Field == "_id")
+                return $"_id {ConvertToSql(queryUnary.Op)} @{parameters.Count}";
+
             var reflectedType = ResolveField(queryUnary.Field, typeReflector, crossApplyDefinitions);
 
             if (queryUnary.Op == UnaryOperator.Contains ||
@@ -205,6 +212,9 @@ namespace NoSqlMapper.SqlServer
         private static string ConvertToSqlOrderBy(SortDescription sort, TypeReflector typeReflector,
             IDictionary<string, CrossApplyDefinition> crossApplyDefinitions)
         {
+            if (sort.Field == "_id")
+                return $"_id {(sort.Order == SortOrder.Descending ? "DESC" : "ASC")}";
+
             var reflectedType = ResolveField(sort.Field, typeReflector, crossApplyDefinitions, true);
 
             if (reflectedType.Type.Is(typeof(int)))

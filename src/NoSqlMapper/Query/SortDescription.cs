@@ -20,12 +20,24 @@ namespace NoSqlMapper.Query
 
         public static SortDescription[] OrderBy([NotNull] string field)
         {
+            Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
             return new[] {new SortDescription(field, SortOrder.Ascending)};
         }
 
         public static SortDescription[] OrderByDescending([NotNull] string field)
         {
+            Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
             return new[] { new SortDescription(field, SortOrder.Descending)};
+        }
+
+        public static SortDescription[] OrderById()
+        {
+            return new[] {new SortDescription("_id", SortOrder.Ascending)};
+        }
+
+        public static SortDescription[] OrderByIdDescending()
+        {
+            return new[] { new SortDescription("_id", SortOrder.Descending) };
         }
     }
 }

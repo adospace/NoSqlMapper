@@ -12,20 +12,19 @@ namespace NoSqlMapper
         public static async Task<T[]> FindAllAsync<T>(this NsCollection<T> collection, params SortDescription[] sorts)
             where T : class
         {
-            return await collection.FindAsync(sorts: sorts);
+            return await collection.FindAsync(sorts: sorts ?? SortDescription.OrderById());
         }
 
         public static async Task<T> FindFirstOrDefaultAsync<T>(this NsCollection<T> collection, params SortDescription[] sorts)
             where T : class
         {
-            return (await collection.FindAsync(sorts: sorts, skip: 0, take: 1)).FirstOrDefault();
+            return (await collection.FindAsync(sorts: sorts ?? SortDescription.OrderById(), skip: 0, take: 1)).FirstOrDefault();
         }
-
 
         public static async Task<T> FindFirstOrDefaultAsync<T>(this NsCollection<T> collection, Query.Query query, params SortDescription[] sorts)
             where T : class
         {
-            return (await collection.FindAsync(query:query, sorts: sorts, skip: 0, take: 1)).FirstOrDefault();
+            return (await collection.FindAsync(query:query, sorts: sorts ?? SortDescription.OrderById(), skip: 0, take: 1)).FirstOrDefault();
         }
     }
 }

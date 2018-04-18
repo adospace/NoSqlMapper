@@ -379,6 +379,11 @@ namespace NoSqlMapper.Test
                 post = postsFound.First();
                 Assert.AreEqual("title of post 1", post.Title);
                 Assert.IsNull(post.Description);
+
+                postsFound = await posts.FindAllAsync(SortDescription.OrderById());
+                Assert.IsNotNull(postsFound);
+                Assert.AreEqual(2, postsFound.Count());
+
             }
         }
 
@@ -449,12 +454,12 @@ namespace NoSqlMapper.Test
                 await posts.EnsureIndexAsync("FavoriteCount");
 
                 //inspect query plan to find index usage
-                await posts.FindAllAsync(new SortDescription("FavoriteCount", SortOrder.Descending));
+                await posts.FindAllAsync(SortDescription.OrderByDescending("FavoriteCount"));
 
                 await posts.DeleteIndexAsync("FavoriteCount");
 
                 //inspect query plan to not find index usage
-                await posts.FindAllAsync(new SortDescription("FavoriteCount", SortOrder.Descending));
+                await posts.FindAllAsync(SortDescription.OrderByDescending("FavoriteCount"));
             }
         }
 
