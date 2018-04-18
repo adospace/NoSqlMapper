@@ -211,7 +211,7 @@ namespace NoSqlMapper.Test
                             Author = new User() {Username = "admin"},
                             Content = "comment content",
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
                         }
                     })
                 });
@@ -227,14 +227,14 @@ namespace NoSqlMapper.Test
                             Author = new User() {Username = "admin"},
                             Content = "comment content to post 2",
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
                         },
                         new Comment()
                         {
                             Author = new User() {Username = "user 2"},
                             Content = "second comment content to post 2",
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
+                                {new Reply() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
                         }
                     })
                 });
@@ -272,14 +272,14 @@ namespace NoSqlMapper.Test
                             Author = new User() {Username = "admin"},
                             Content = "comment content to post 2",
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
                         },
                         new Comment()
                         {
                             Author = new User() {Username = "user2"},
                             Content = "second comment content to post 2",
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
+                                {new Reply() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
                         }
                     })
                 });
@@ -329,7 +329,7 @@ namespace NoSqlMapper.Test
                             Content = "comment content",
                             Updated = DateTime.Now.AddDays(-1),
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
                         }
                     })
                 });
@@ -347,14 +347,14 @@ namespace NoSqlMapper.Test
                             Content = "comment content to post 2",
                             Updated = DateTime.Now,
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
                         },
                         new Comment()
                         {
                             Author = new User() {Username = "user2"},
                             Content = "second comment content to post 2",
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
+                                {new Reply() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
                         }
                     })
                 });
@@ -387,6 +387,101 @@ namespace NoSqlMapper.Test
             }
         }
 
+
+        [TestMethod]
+        public async Task DatabaseTest_FindAll_Collection4()
+        {
+            using (var nsClient = new NsConnection()
+                .UseSqlServer(ConnectionString)
+                .UseJsonNET()
+                .LogTo(Console.WriteLine)
+            )
+            {
+                var db = await nsClient.GetDatabaseAsync("DatabaseTest_FindAll_Collection4");
+
+                await db.DeleteCollectionAsync("posts");
+
+                var posts = await db.GetCollectionAsync<Post>("posts");
+
+                await posts.InsertAsync(new Post()
+                {
+                    Title = "title of post 1",
+                    Tags = new[] { "tag1", "tag2" },
+                    Updated = DateTime.Now.AddDays(-1),
+                    Author = new User() { Username = "admin" },
+                    Comments = new List<Comment>(new[]
+                    {
+                        new Comment()
+                        {
+                            Author = new User() {Username = "admin"},
+                            Content = "comment content",
+                            Updated = DateTime.Now.AddDays(-1),
+                            Replies = new[]
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
+                        }
+                    })
+                });
+
+                await posts.InsertAsync(new Post()
+                {
+                    Title = "title of post 2",
+                    Tags = new[] { "tag2" },
+                    Author = new User() { Username = "admin" },
+                    Comments = new List<Comment>(new[]
+                    {
+                        new Comment()
+                        {
+                            Author = new User() {Username = "admin"},
+                            Content = "comment content to post 2",
+                            Replies = new[]
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
+                        },
+                        new Comment()
+                        {
+                            Author = new User() {Username = "user2"},
+                            Content = "second comment content to post 2",
+                            Replies = new[]
+                                {new Reply() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
+                        }
+                    })
+                });
+
+                await posts.InsertAsync(new Post()
+                {
+                    Title = "title of post 3",
+                    Tags = new[] { "tag3", "tag5" },
+                    Updated = DateTime.Now.AddDays(-3),
+                    Author = new User() { Username = "user" },
+                    Comments = new List<Comment>(new[]
+                    {
+                        new Comment()
+                        {
+                            Author = new User() {Username = "admin"},
+                            Content = "comment content to post3",
+                            Updated = DateTime.Now.AddDays(-3),
+                        }
+                    })
+                });
+
+                var adminPosts = await posts.FindAsync(_ => _.Author.Username == "admin");
+
+                Assert.IsNotNull(adminPosts);
+                Assert.AreEqual(2, adminPosts.Length);
+
+                var userPostsAndReplies = await posts.FindAsync(_ => _.Author.Username == "user" || _.Comments[0].Replies[0].Author.Username == "user");
+
+                Assert.IsNotNull(userPostsAndReplies);
+                Assert.AreEqual(2, userPostsAndReplies.Length);
+
+                var now = DateTime.Now;
+                var oldPosts = await posts.FindAsync(_ => _.Updated < now);
+
+                Assert.IsNotNull(oldPosts);
+                Assert.AreEqual(2, oldPosts.Length);
+
+            }
+        }
+
         [TestMethod]
         public async Task DatabaseTest_Index()
         {
@@ -415,7 +510,7 @@ namespace NoSqlMapper.Test
                             Content = "comment content",
                             Updated = DateTime.Now.AddDays(-1),
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment"}}
                         }
                     })
                 });
@@ -434,14 +529,14 @@ namespace NoSqlMapper.Test
                             Content = "comment content to post 2",
                             Updated = DateTime.Now,
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
+                                {new Reply() {Author = new User() {Username = "user"}, Content = "reply to comment of post 2"}}
                         },
                         new Comment()
                         {
                             Author = new User() {Username = "user2"},
                             Content = "second comment content to post 2",
                             Replies = new[]
-                                {new Comment() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
+                                {new Reply() {Author = new User() {Username = "admin"}, Content = "admin reply to user 2 comment of post 2"}}
                         }
                     })
                 });

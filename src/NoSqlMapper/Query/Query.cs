@@ -23,6 +23,38 @@ namespace NoSqlMapper.Query
             return new QueryUnary(field, UnaryOperator.NotEqualTo, value);
         }
 
+        public static Query Lt([NotNull] string field, [NotNull] object value)
+        {
+            Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
+            Validate.NotNull(value, nameof(value));
+
+            return new QueryUnary(field, UnaryOperator.LessThan, value);
+        }
+
+        public static Query Lte([NotNull] string field, [NotNull] object value)
+        {
+            Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
+            Validate.NotNull(value, nameof(value));
+
+            return new QueryUnary(field, UnaryOperator.LessOrEqualTo, value);
+        }
+
+        public static Query Gt([NotNull] string field, [NotNull] object value)
+        {
+            Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
+            Validate.NotNull(value, nameof(value));
+
+            return new QueryUnary(field, UnaryOperator.GreaterThan, value);
+        }
+
+        public static Query Gte([NotNull] string field, [NotNull] object value)
+        {
+            Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
+            Validate.NotNull(value, nameof(value));
+
+            return new QueryUnary(field, UnaryOperator.GreaterOrEqualTo, value);
+        }
+
         public static Query And([NotNull] Query left, [NotNull] Query right)
         {
             Validate.NotNull(left, nameof(left));
