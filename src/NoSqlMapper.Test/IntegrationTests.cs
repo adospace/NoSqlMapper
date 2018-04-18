@@ -384,6 +384,13 @@ namespace NoSqlMapper.Test
                 Assert.IsNotNull(postsFound);
                 Assert.AreEqual(2, postsFound.Count());
 
+                postsFound = await posts.FindAsync(_ => _.Comments[0].Author.Username == "admin",
+                    SortDescription.OrderBy<Post>(_ => _.Comments[0].Updated));
+                Assert.IsNotNull(postsFound);
+                Assert.AreEqual(2, postsFound.Count());
+                post = postsFound.First();
+                Assert.AreEqual("title of post 1", post.Title);
+                Assert.IsNull(post.Description);
             }
         }
 

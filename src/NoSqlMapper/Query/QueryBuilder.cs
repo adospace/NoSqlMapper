@@ -66,6 +66,8 @@ namespace NoSqlMapper.Query
                 return BuildPath(methodCallExpression);
             if (expression is BinaryExpression binaryExpression)
                 return BuildPath(binaryExpression);
+            if (expression is UnaryExpression unaryExpression)
+                return BuildPath(unaryExpression);
 
             throw new NotSupportedException();
         }
@@ -92,9 +94,14 @@ namespace NoSqlMapper.Query
             throw new NotSupportedException();
         }
 
-        private static string BuildPath(BinaryExpression binaryExpression)
+        private static string BuildPath(BinaryExpression expression)
         {
-            return BuildPath(binaryExpression.Left);
+            return BuildPath(expression.Left);
+        }
+
+        private static string BuildPath(UnaryExpression expression)
+        {
+            return BuildPath(expression.Operand);
         }
 
         private static Query Build(BinaryExpression expression)

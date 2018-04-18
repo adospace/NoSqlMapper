@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 using JetBrains.Annotations;
 
@@ -28,6 +29,20 @@ namespace NoSqlMapper.Query
         {
             Validate.NotNullOrEmptyOrWhiteSpace(field, nameof(field));
             return new[] { new SortDescription(field, SortOrder.Descending)};
+        }
+
+        public static SortDescription[] OrderBy<T>([NotNull] Expression<Func<T, object>> field) where T : class
+        {
+            Validate.NotNull(field, nameof(field));
+
+            return new[] { new SortDescription(QueryBuilder<T>.BuildPath(field), SortOrder.Ascending) };
+        }
+
+        public static SortDescription[] OrderByDescending<T>([NotNull] Expression<Func<T, object>> field) where T : class
+        {
+            Validate.NotNull(field, nameof(field));
+
+            return new[] { new SortDescription(QueryBuilder<T>.BuildPath(field), SortOrder.Descending) };
         }
 
         public static SortDescription[] OrderById()
