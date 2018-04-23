@@ -11,7 +11,8 @@ namespace NoSqlMapper.PostgreSQL
     public class NpgSqlDatabaseProvider : ISqlDatabaseProvider
     {
         public string ConnectionString { get; }
-        public string Host { get; }
+        public string Host { get; private set; }
+        public string Username { get; private set; }
 
         public NpgSqlDatabaseProvider(NsConnection connection, string connectionString)
         {
@@ -22,15 +23,7 @@ namespace NoSqlMapper.PostgreSQL
 
             Validate.NotNullOrEmptyOrWhiteSpace(connectionString, nameof(connectionString));
             ConnectionString = connectionString;
-            try
-            {
-                var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString);
-                Host = connectionStringBuilder.Host;
-            }
-            catch (Exception ex)
-            {
-                throw  new InvalidOperationException("Connection string to Sql Server seems invalid", ex);
-            }
+            InitializeConnectionStringParameters();
         }
 
         public NpgSqlDatabaseProvider(NsConnection connection, NpgsqlConnection npgSqlConnection, bool ownConnection = false)
@@ -42,6 +35,22 @@ namespace NoSqlMapper.PostgreSQL
             _npgSqlConnection = npgSqlConnection;
             _disposeConnection = ownConnection;
             ConnectionString = npgSqlConnection.ConnectionString;
+            InitializeConnectionStringParameters();
+        }
+
+        private void InitializeConnectionStringParameters()
+        {
+            try
+            {
+                var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionString);
+                Host = connectionStringBuilder.Host;
+                Username = connectionStringBuilder.Username;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Connection string to Sql Server seems invalid", ex);
+            }
+
         }
 
         private void Log(string message)
@@ -79,34 +88,43 @@ namespace NoSqlMapper.PostgreSQL
             return Task.CompletedTask;
         }
 
-        private async Task ExecuteNonQueryAsync(params string[] sqlLines)
-        {
-            await EnsureConnectionAsync();
-            try
-            {
-                var sql = string.Join(Environment.NewLine, sqlLines);
-                Log($"ExecuteNonQueryAsync(){Environment.NewLine}" +
-                    $"{sql}{Environment.NewLine}");
-                using (var cmd = new NpgsqlCommand(sql, _npgSqlConnection))
-                    await cmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception e)
-            {
-                Log($"ExecuteNonQueryAsync() Exception{Environment.NewLine}{e}");
-                throw;
-            }
-            finally
-            {
-                Log($"ExecuteNonQueryAsync() Completed");
-            }
-        }
+        //private async Task ExecuteNonQueryAsync(params string[] sqlLines)
+        //{
+        //    await EnsureConnectionAsync();
+        //    try
+        //    {
+        //        var sql = string.Join(Environment.NewLine, sqlLines);
+        //        Log($"ExecuteNonQueryAsync(){Environment.NewLine}" +
+        //            $"{sql}{Environment.NewLine}");
+        //        using (var cmd = new NpgsqlCommand(sql, _npgSqlConnection))
+        //            await cmd.ExecuteNonQueryAsync();
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Log($"ExecuteNonQueryAsync() Exception{Environment.NewLine}{e}");
+        //        throw;
+        //    }
+        //    finally
+        //    {
+        //        Log($"ExecuteNonQueryAsync() Completed");
+        //    }
+        //}
 
-        private async Task<object> ExecuteNonQueryAsync(string[] sqlLines, IDictionary<string, object> parameters,
+        private async Task<object> ExecuteScalarAsync(string sql) => await ExecuteNonQueryAsync(new[] { sql }, null, executeAsScalar: true);
+        private async Task<object> ExecuteScalarAsync(string sql, IDictionary<string, object> parameters) => await ExecuteNonQueryAsync(new[] { sql }, parameters: parameters, executeAsScalar: true);
+
+        private async Task<object> ExecuteNonQueryAsync(string sql) => await ExecuteNonQueryAsync(new[] {sql}, null);
+        private async Task<object> ExecuteNonQueryAsync(params string[] sqlLines) => await ExecuteNonQueryAsync(sqlLines, null);
+
+        private async Task<object> ExecuteNonQueryAsync(string[] sqlLines, 
+            IDictionary<string, object> parameters,
             bool executeAsScalar = false)
         {
             await EnsureConnectionAsync();
             try
             {
+                parameters = parameters ?? new Dictionary<string, object>();
+
                 var sql = string.Join(Environment.NewLine, sqlLines);
                 Log($"ExecuteNonQueryAsync(){Environment.NewLine}" +
                     $"{sql}{Environment.NewLine}" +
@@ -183,10 +201,7 @@ namespace NoSqlMapper.PostgreSQL
             Validate.NotNullOrEmptyOrWhiteSpace(databaseName, nameof(databaseName));
 
             await ExecuteNonQueryAsync(
-                $"IF (db_id(N'{databaseName}') IS NULL)",
-                "BEGIN",
-                $"    CREATE DATABASE [{databaseName}]",
-                "END;");
+                $"CREATE SCHEMA IF NOT EXISTS \"{databaseName}\" ");
         }
 
         public async Task DeleteDatabaseAsync(NsDatabase database)
@@ -202,19 +217,9 @@ namespace NoSqlMapper.PostgreSQL
             Validate.NotNullOrEmptyOrWhiteSpace(tableName, nameof(tableName));
 
             await ExecuteNonQueryAsync( 
-                $"USE [{database.Name}]",
-                $"IF NOT EXISTS (select * from sysobjects where name='{tableName}' and xtype='U')",
-                $"BEGIN",
-                $"CREATE TABLE [dbo].[{tableName}](",
-                objectIdType == ObjectIdType.Guid ? "[_id] [uniqueidentifier] NOT NULL," : "[_id] [int] IDENTITY(1,1) NOT NULL",
-                $"[_document] [nvarchar](max) NOT NULL,",
-                $"CONSTRAINT [PK_{tableName}] PRIMARY KEY CLUSTERED ",
-                $"(",
-                $"[_id] ASC",
-                $") WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]",
-                $") ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]",
-                objectIdType == ObjectIdType.Guid ? $"ALTER TABLE [dbo].[{tableName}] ADD  CONSTRAINT [DF_{tableName}__id]  DEFAULT (newid()) FOR [_id]" : string.Empty,
-                $"END");
+                $"CREATE TABLE IF NOT EXISTS \"{database.Name}\".\"{tableName}\"(" +
+                (objectIdType == ObjectIdType.Guid ? $"_id UUID" : "BIGSERIAL") + " PRIMARY KEY," +
+                $"_document TEXT NOT NULL)");
         }
 
         public async Task EnsureIndexAsync(NsDatabase database, string tableName, TypeReflector typeReflector, string path, bool unique = false, bool ascending = true)
