@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoSqlMapper.JsonNET", "NoSq
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoSqlMapper.Test", "NoSqlMapper.Test\NoSqlMapper.Test.csproj", "{BCBD0805-C021-481B-97A4-01B55964AD38}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoSqlMapper.PostgreSQL", "NoSqlMapper.PostgreSQL\NoSqlMapper.PostgreSQL.csproj", "{E9290ED3-5D4E-45EC-88F3-48C69FA539CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{BCBD0805-C021-481B-97A4-01B55964AD38}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCBD0805-C021-481B-97A4-01B55964AD38}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCBD0805-C021-481B-97A4-01B55964AD38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9290ED3-5D4E-45EC-88F3-48C69FA539CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9290ED3-5D4E-45EC-88F3-48C69FA539CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9290ED3-5D4E-45EC-88F3-48C69FA539CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9290ED3-5D4E-45EC-88F3-48C69FA539CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
