@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="IntegrationTests.SqlServer.cs" />
+    <Compile Include="IntegrationTests.SqlServer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\NoSqlMapper\Validate.cs" Link="Validate.cs" />
   </ItemGroup>
 
