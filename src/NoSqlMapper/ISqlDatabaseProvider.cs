@@ -53,7 +53,7 @@ namespace NoSqlMapper
 
         #region Create & Update & Delete
         [NotNull]
-        Task<object> InsertAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string json, object id = null);
+        Task<object> InsertAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string json, object id = null, ObjectIdType objectIdType = ObjectIdType.Guid);
 
         [NotNull]
         Task UpdateAsync([NotNull] NsDatabase database, [NotNull] string tableName, [NotNull] string json, [NotNull] object id);

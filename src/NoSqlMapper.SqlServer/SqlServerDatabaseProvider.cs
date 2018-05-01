@@ -351,7 +351,7 @@ namespace NoSqlMapper.SqlServer
                 parameters.ToDictionary(_ => $"@{_.Key}", _ => _.Value), executeAsScalar: true));
         }
 
-        public async Task<object> InsertAsync(NsDatabase database, string tableName, string json, object id)
+        public async Task<object> InsertAsync(NsDatabase database, string tableName, string json, object id, ObjectIdType typeOfObjectId)
         {
             Validate.NotNull(database, nameof(database));
             Validate.NotNullOrEmptyOrWhiteSpace(tableName, nameof(tableName));

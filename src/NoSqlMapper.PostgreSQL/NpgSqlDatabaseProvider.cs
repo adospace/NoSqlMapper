@@ -208,7 +208,7 @@ namespace NoSqlMapper.PostgreSQL
         {
             Validate.NotNull(database, nameof(database));
 
-            await ExecuteNonQueryAsync($"DROP DATABASE {database.Name}");
+            await ExecuteNonQueryAsync($"DROP DATABASE \"{database.Name}\"");
         }
 
         public async Task EnsureTableAsync(NsDatabase database, string tableName, ObjectIdType objectIdType = ObjectIdType.Guid)
@@ -295,11 +295,7 @@ namespace NoSqlMapper.PostgreSQL
         {
             Validate.NotNull(database, nameof(database));
             await ExecuteNonQueryAsync( 
-                $"USE [{database.Name}]",
-                $"IF EXISTS (select * from sysobjects where name='{tableName}' and xtype='U')",
-                $"BEGIN",
-                $"DROP TABLE [dbo].[{tableName}]",
-                $"END");
+                $"DROP TABLE IF EXISTS \"{database}\".\"{tableName}\"");
         }
 
         public async Task<IEnumerable<NsDocument>> FindAsync(NsDatabase database, string tableName, TypeReflector typeReflector, Query.Query query = null, SortDescription[] sorts = null, int skip = 0, int take = 0)
@@ -310,9 +306,7 @@ namespace NoSqlMapper.PostgreSQL
             var sql = new List<string>();
             var parameters = new List<KeyValuePair<int, object>>();
 
-            sql.Append($"USE [{database.Name}]");
-                
-            SqlUtils.ConvertToSql(sql, typeReflector, tableName, parameters, query, sorts);
+            SqlUtils.ConvertToSql(sql, typeReflector, database.Name, tableName, parameters, query, sorts);
                 
             if (skip > 0)
                 sql.Append($"OFFSET {skip} ROWS");
@@ -330,8 +324,7 @@ namespace NoSqlMapper.PostgreSQL
 
             var sql = new List<string>();
 
-            sql.Append($"USE [{database.Name}]")
-                .Append($"SELECT _id, _document FROM [dbo].[{tableName}]")
+            sql .Append($"SELECT _id, _document FROM \"{database.Name}\".\"{tableName}\"")
                 .Append($"WHERE (_id = @1)");
 
             return (await ExecuteReaderAsync(sql.ToArray(), new Dictionary<string, object>() {{"@1", id}}))
@@ -346,51 +339,46 @@ namespace NoSqlMapper.PostgreSQL
             var sql = new List<string>();
             var parameters = new List<KeyValuePair<int, object>>();
 
-            sql.Append($"USE [{database.Name}]");
-
-            SqlUtils.ConvertToSql(sql, typeReflector, tableName, parameters, query, selectCount: true);
+            SqlUtils.ConvertToSql(sql, typeReflector, database.Name, tableName, parameters, query, selectCount: true);
 
             return (int) (await ExecuteNonQueryAsync(sql.ToArray(),
                 parameters.ToDictionary(_ => $"@{_.Key}", _ => _.Value), executeAsScalar: true));
         }
 
-        public async Task<object> InsertAsync(NsDatabase database, string tableName, string json, object id)
+        public async Task<object> InsertAsync(NsDatabase database, string tableName, string json, object id, ObjectIdType typeOfObjectId)
         {
             Validate.NotNull(database, nameof(database));
             Validate.NotNullOrEmptyOrWhiteSpace(tableName, nameof(tableName));
             Validate.NotNull(json, nameof(json));
 
-            if (id != null)
+            if (id != null || typeOfObjectId == ObjectIdType.Guid)
             {
                 await ExecuteNonQueryAsync(new[]
                            {
-                               $"USE [{database.Name}]",
-                               $"INSERT INTO [dbo].[{tableName}]",
-                               $"           ([_id]",
-                               $"           ,[_document])",
+                               $"INSERT INTO \"{database.Name}\".\"{tableName}\"",
+                               $"           (\"_id\"",
+                               $"           ,\"_document\")",
                                $"     VALUES",
                                $"           (@id",
-                               $"           ,@document)",
-                               $"SELECT SCOPE_IDENTITY();"
+                               $"           ,@document)"
                            },
                            new Dictionary<string, object>()
                            {
-                               {"@id", id},
+                               {"@id", id ?? Guid.NewGuid()},
                                {"@document", json}
                            },
                            executeAsScalar: false);
 
                 return id;
             }
-
+            
             return await ExecuteNonQueryAsync(new[]
                        {
-                           $"USE [{database.Name}]",
-                           $"INSERT INTO [dbo].[{tableName}]",
-                           $"           ([_document])" +
-                           $"output INSERTED._id",
+                           $"INSERT INTO \"{database.Name}\".\"{tableName}\"",
+                           $"           (\"_document\")" +
                            $"     VALUES",
-                           $"           (@document)"
+                           $"           (@document)",
+                           $"RETURNING _id"
                        },
                        new Dictionary<string, object>()
                        {

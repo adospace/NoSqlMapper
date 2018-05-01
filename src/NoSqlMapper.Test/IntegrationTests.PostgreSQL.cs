@@ -43,7 +43,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_FindAll(nsClient);
         }
 
         [TestMethod]
@@ -53,7 +53,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_FindByObjectId(nsClient);
         }
 
         [TestMethod]
@@ -63,7 +63,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_FindAll_ContainsArray(nsClient);
         }
 
         [TestMethod]
@@ -73,7 +73,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_FindAll_NotContainsArray(nsClient);
         }
 
         [TestMethod]
@@ -83,7 +83,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_FindAll_Collection1(nsClient);
         }
 
         [TestMethod]
@@ -93,7 +93,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_FindAll_Collection2(nsClient);
         }
 
         [TestMethod]
@@ -103,7 +103,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_FindAll_Collection3_Sort(nsClient);
         }
 
         [TestMethod]
@@ -113,7 +113,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_FindAll_Collection4(nsClient);
         }
 
         [TestMethod]
@@ -123,7 +123,7 @@ namespace NoSqlMapper.Test
                 .UsePostgreSQL(ConnectionString)
                 .UseJsonNET()
                 .LogTo(Console.WriteLine))
-                await IntegrationTests.DatabaseTest_InsertWithoutId(nsClient);
+                await IntegrationTests.DatabaseTest_Index(nsClient);
         }
     }
 }

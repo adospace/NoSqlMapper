@@ -26,8 +26,20 @@ namespace NoSqlMapper
         private ObjectIdType _typeOfObjectId;
         private TypeReflector _typeReflector;
 
+        public ObjectIdType TypeOfObjectId
+        {
+            get
+            {
+                ReflectModelType();
+                return _typeOfObjectId;
+            }
+        }
+
         private void ReflectModelType()
         {
+            if (_typeReflector != null)
+                return;
+            
             _typeReflector = TypeReflector.Create<T>();
 
             var idKey = _typeReflector.Properties.FirstOrDefault(_ => StringComparer.OrdinalIgnoreCase.Compare(_.Key, "id") == 0);
@@ -44,7 +56,6 @@ namespace NoSqlMapper
             _idPropertyName = idKey.Key;
             if (_idPropertyName != null)
             {
-                //default ObjectIdType.Guid
                 if (_typeReflector.Properties[_idPropertyName].PropertyType == typeof(int))
                     _typeOfObjectId = ObjectIdType.Int;
             }
@@ -52,9 +63,7 @@ namespace NoSqlMapper
 
         internal async Task EnsureTableAsync()
         {
-            ReflectModelType();
-
-            await Database.Connection.SqlDatabaseProvider.EnsureTableAsync(Database, Name, _typeOfObjectId);
+            await Database.Connection.SqlDatabaseProvider.EnsureTableAsync(Database, Name, TypeOfObjectId);
         }
 
         [NotNull]
@@ -82,7 +91,7 @@ namespace NoSqlMapper
             var json = Database.Connection.JsonSerializer.Serialize(document, _idPropertyName);
 
             var newlyCreatedId =
-                await Database.Connection.SqlDatabaseProvider.InsertAsync(Database, Name, json, GetObjectId(document));
+                await Database.Connection.SqlDatabaseProvider.InsertAsync(Database, Name, json, GetObjectId(document), TypeOfObjectId);
 
             SetObjectId(document, newlyCreatedId);
 

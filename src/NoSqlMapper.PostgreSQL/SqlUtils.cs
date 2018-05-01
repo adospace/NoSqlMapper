@@ -44,6 +44,7 @@ namespace NoSqlMapper.PostgreSQL
 
         public static string ConvertToSql(List<string> sqlLines, 
             TypeReflector typeReflector, 
+            string databaseName,
             string tableName, 
             List<KeyValuePair<int, object>> parameters,
             Query.Query query = null,
@@ -73,9 +74,9 @@ namespace NoSqlMapper.PostgreSQL
             }
 
             if (selectCount)
-                sqlLines.Append($"SELECT COUNT (DISTINCT _id) FROM [dbo].[{tableName}] _doc");
+                sqlLines.Append($"SELECT COUNT (DISTINCT _id) FROM \"{databaseName}\".\"{tableName}\" _doc");
             else
-                sqlLines.Append($"SELECT _id, _document FROM [dbo].[{tableName}] _doc");
+                sqlLines.Append($"SELECT _id, _document FROM \"{databaseName}\".\"{tableName}\" _doc");
 
             foreach (var crossApplyDefinition in crossApplyPaths.Where(_=>_.Value.Parent == null).OrderBy(_=>_.Key))
             {
@@ -90,7 +91,7 @@ namespace NoSqlMapper.PostgreSQL
                 if (crossApplyPaths.Any(_ => _.Value.AppendToGroupBy))
                 {
                     sqlLines.Append(
-                        $"GROUP BY _id, _document, {string.Join(", ", crossApplyPaths.Where(_ => _.Value.AppendToGroupBy).Select(_ => "[" + _.Value.Path + "]"))}");
+                        $"GROUP BY _id, _document, {string.Join(", ", crossApplyPaths.Where(_ => _.Value.AppendToGroupBy).Select(_ => "\"" + _.Value.Path + "\""))}");
                 }
                 else
                     sqlLines.Append($"GROUP BY _id, _document");
